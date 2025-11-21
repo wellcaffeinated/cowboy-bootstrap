@@ -24,8 +24,5 @@
     regexp: '^ChallengeResponseAuthentication'
     line: 'ChallengeResponseAuthentication no'
     state: present
+  notify: sshd
 
-- name: Restart SSH
-  ansible.builtin.service:
-    name: ssh
-    state: restarted

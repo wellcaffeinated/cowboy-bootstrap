@@ -1,0 +1,7 @@
+---
+# Install Python so real Ansible modules work
+- name: Install Python for host Ansible execution
+  raw: |
+    apt-get update
+    apt-get install -y python3
+  become: true

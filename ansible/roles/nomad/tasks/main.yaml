@@ -1,0 +1,29 @@
+---
+- name: Install core packages
+  ansible.builtin.apt:
+    name:
+      - curl
+      - vim
+      - socat
+      - ca-certificates
+    state: present
+  become: true
+
+- name: Add Hashicorp repo
+  ansible.builtin.apt_repository:
+    repo: "deb [arch=amd64] https://apt.releases.hashicorp.com {{ ansible_distribution_release }} main"
+    state: present
+  become: true
+
+- name: Install Nomad
+  ansible.builtin.apt:
+    name: nomad
+    state: present
+  become: true
+
+- name: Enable and start Nomad
+  ansible.builtin.systemd:
+    name: nomad
+    state: started
+    enabled: true
+  become: true
