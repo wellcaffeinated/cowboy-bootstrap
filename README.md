@@ -1,5 +1,13 @@
 # Cowboy Bootstrap
 
+## Steps
+
+On a clean install of Ubuntu Server, run:
+
+```
+./begin.sh
+```
+
 ## Background
 
 Based on the work done by M. Aldridge:
