@@ -1,0 +1,31 @@
+---
+- name: Set authorized keys
+  ansible.posix.authorized_key:
+    user: cowboy
+    key: "{{ item }}"
+    state: present
+  loop:
+    - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMFX4E+XcgBoSSDpTAMQUF18jmgLfTX39HWI1FWUwuzh wellcaffeinated@github.com
+  tags: [ssh_keys]
+
+# Harden SSH: disable password auth
+- name: Disable password authentication in sshd_config
+  ansible.builtin.lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: '^PasswordAuthentication'
+    line: 'PasswordAuthentication no'
+    state: present
+    backup: yes
+
+# Ensure ChallengeResponseAuthentication is off
+- name: Disable ChallengeResponseAuthentication
+  ansible.builtin.lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: '^ChallengeResponseAuthentication'
+    line: 'ChallengeResponseAuthentication no'
+    state: present
+
+- name: Restart SSH
+  ansible.builtin.service:
+    name: ssh
+    state: restarted

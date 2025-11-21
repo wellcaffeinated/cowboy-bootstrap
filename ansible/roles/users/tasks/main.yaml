@@ -1,0 +1,16 @@
+---
+# Create user cowboy
+- name: Ensure cowboy user exists
+  ansible.builtin.user:
+    name: cowboy
+    shell: /bin/bash
+    state: present
+    create_home: yes
+
+# Add cowboy to sudoers (passwordless)
+- name: Allow cowboy to sudo without password
+  ansible.builtin.copy:
+    dest: /etc/sudoers.d/99-cowboy-nopasswd
+    mode: '0440'
+    content: |
+      cowboy ALL=(ALL) NOPASSWD:ALL
