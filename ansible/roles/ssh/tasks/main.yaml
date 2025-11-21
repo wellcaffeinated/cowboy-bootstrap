@@ -1,11 +1,19 @@
 ---
+- name: Ensure SSH key login is enabled
+  ansible.builtin.lineinfile:
+    path: /host/etc/ssh/sshd_config
+    regexp: '^PubkeyAuthentication'
+    line: 'PubkeyAuthentication yes'
+    state: present
+    create: yes
+
 - name: Set authorized keys
   ansible.posix.authorized_key:
     user: cowboy
     key: "{{ item }}"
     state: present
   loop:
-    - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMFX4E+XcgBoSSDpTAMQUF18jmgLfTX39HWI1FWUwuzh wellcaffeinated@github.com
+    - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAII4KEBNHcPwnQaGW+gS/SXkEf8+UxKBDtJr9TgBC5qOq wellcaffeinated@CoffeeCake.local
   tags: [ssh_keys]
 
 # Harden SSH: disable password auth
@@ -15,7 +23,6 @@
     regexp: '^PasswordAuthentication'
     line: 'PasswordAuthentication no'
     state: present
-    backup: yes
 
 # Ensure ChallengeResponseAuthentication is off
 - name: Disable ChallengeResponseAuthentication
@@ -24,5 +31,12 @@
     regexp: '^ChallengeResponseAuthentication'
     line: 'ChallengeResponseAuthentication no'
     state: present
-  notify: sshd
+  notify: 
+    - sshd
 
+- name: Dummy task to trigger ssh restart
+  ansible.builtin.debug:
+    msg: "Triggering SSH handler"
+  notify: 
+    - sshd
+  changed_when: true

@@ -2,7 +2,7 @@
 FROM alpine:latest AS ansible
 WORKDIR /ansible
 RUN --mount=type=bind,source=requirements.txt,target=requirements.txt \
-    apk update && apk add python3 bash tini && \
+    apk update && apk add python3 bash openssh-client tini && \
     python3 -m venv venv && \
     ./venv/bin/pip install -r requirements.txt && \
     ./venv/bin/ansible-galaxy collection install community.general

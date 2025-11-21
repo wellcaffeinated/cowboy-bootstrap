@@ -1,5 +1,5 @@
 ---
-- hosts: localhost
+- hosts: chroot
   become: yes
   become_user: root
   become_method: sudo
@@ -7,4 +7,4 @@
   roles:
     - base
     # - users
-    # - ssh
+    - ssh
