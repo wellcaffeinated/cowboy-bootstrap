@@ -8,19 +8,18 @@ fi
 
 # --- CONFIG ---
 ANSIBLE_IMAGE="cowboy-bootstrap-ansible"
-PLAYBOOK="/ansible/playbooks/setup.yml"
+PLAYBOOK="/ansible/setup.yaml"
 
-apt-get install -y docker.io docker-compose-v2
+apt-get install -y docker.io docker-compose-v2 docker-buildx
 
 # TODO remove after dev
 docker build -t ${ANSIBLE_IMAGE} ansible/
 
 docker run --rm -it \
-  --privileged \
-  --network host \
-  -v /:/host \
-  "$ANSIBLE_IMAGE" \
-  ansible-playbook \
+    --privileged \
+    --network host \
+    -v /:/host \
+    "$ANSIBLE_IMAGE" \
     -c community.general.chroot \
     -e ansible_host=/host \
-    "$PLAYBOOK"
+    -D "$PLAYBOOK" -vvv
