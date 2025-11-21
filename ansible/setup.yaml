@@ -9,3 +9,4 @@
     - chrony
     - users
     - ssh
+    - nomad

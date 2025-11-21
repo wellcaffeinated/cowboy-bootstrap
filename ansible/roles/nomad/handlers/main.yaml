@@ -1,0 +1,7 @@
+---
+- name: nomad
+  service:
+    name: nomad
+    state: restarted
+  delegate_to: local-host
+  become: true

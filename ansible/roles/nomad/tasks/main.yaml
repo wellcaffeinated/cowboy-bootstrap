@@ -1,29 +1,33 @@
 ---
-- name: Install core packages
+- name: Install required packages
   ansible.builtin.apt:
     name:
-      - curl
-      - vim
-      - socat
-      - ca-certificates
+      - wget
+      - gpg
+      - coreutils
     state: present
-  become: true
 
-- name: Add Hashicorp repo
+- name: Add HashiCorp GPG key
+  ansible.builtin.get_url:
+    url: "https://apt.releases.hashicorp.com/gpg"
+    dest: "/tmp/hashicorp.gpg"
+    mode: '0644'
+
+- name: Convert GPG key to keyring
+  ansible.builtin.command:
+    cmd: "gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg /tmp/hashicorp.gpg"
+    creates: "/usr/share/keyrings/hashicorp-archive-keyring.gpg"
+
+- name: Add HashiCorp repository
   ansible.builtin.apt_repository:
-    repo: "deb [arch=amd64] https://apt.releases.hashicorp.com {{ ansible_distribution_release }} main"
+    repo: "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com {{ ansible_lsb.codename }} main"
     state: present
-  become: true
+    filename: hashicorp
 
 - name: Install Nomad
   ansible.builtin.apt:
     name: nomad
     state: present
-  become: true
-
-- name: Enable and start Nomad
-  ansible.builtin.systemd:
-    name: nomad
-    state: started
-    enabled: true
-  become: true
+    update_cache: yes
+  notify:
+    - nomad
