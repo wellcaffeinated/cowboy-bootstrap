@@ -4,8 +4,28 @@
     pkg: chrony
     state: present
 
+- name: Create sources file for NIST Boulder servers
+  ansible.builtin.copy:
+    dest: /etc/chrony/sources.d/nist-boulder.sources
+    content: |
+      server time-b-b.nist.gov iburst
+      server time-c-b.nist.gov iburst
+      server time-d-b.nist.gov iburst
+    owner: root
+    group: root
+    mode: '0644'
+
 - name: Enable Service
   ansible.builtin.service:
     name: chronyd
-    state: started
+    state: restarted
     enabled: true
+  delegate_to: local-host
+
+- name: Verify chrony sources
+  ansible.builtin.command: chronyc sources -v
+  register: chrony_sources
+
+- name: Show chrony sources
+  ansible.builtin.debug:
+    var: chrony_sources.stdout_lines
