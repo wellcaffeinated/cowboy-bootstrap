@@ -6,5 +6,5 @@
 
   roles:
     - base
-    # - users
+    - users
     - ssh
