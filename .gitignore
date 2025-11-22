@@ -1,0 +1,145 @@
+# Claude Code
+.claude/
+.claude-code/
+*.claude-workspace
+
+# Ansible
+*.retry
+ansible/.vault_pass
+ansible/vault_pass.txt
+ansible/group_vars/*/vault.yml
+ansible/host_vars/*/vault.yml
+.ansible/
+
+# Terraform
+*.tfstate
+*.tfstate.*
+*.tfvars
+.terraform/
+.terraform.lock.hcl
+terraform.rc
+.terraformrc
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# HashiCorp Vault - Runtime data and logs only
+vault/data/
+vault/logs/
+.vault-token
+vault-unseal-keys.txt
+vault-root-token.txt
+*.vault
+
+# HashiCorp Nomad - Runtime data and logs only
+nomad/data/
+nomad/logs/
+.nomad-token
+
+# HashiCorp Consul - Runtime data and logs only
+consul/data/
+consul/logs/
+.consul-token
+
+# SSH Keys - Private keys only (public keys .pub are tracked)
+*.pem
+id_rsa
+id_ed25519
+id_ecdsa
+id_dsa
+# Note: *.pub files are NOT ignored - public keys should be tracked
+# Note: authorized_keys and known_hosts in repo are tracked
+
+# Certificates - Private keys only (public certs are tracked)
+*.key
+*.p12
+*.pfx
+# Note: *.crt and *.csr files are NOT ignored - public certs should be tracked
+
+# Credentials and Secrets
+*.env
+.env.*
+!.env.example
+secrets/
+secrets.yml
+credentials.yml
+credentials.json
+*.credentials
+
+# OS Files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+.fuse_hidden*
+.directory
+.Trash-*
+.nfs*
+
+# Editor Files - Allow shared project settings, ignore user-specific
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.idea/*
+!.idea/runConfigurations/
+!.idea/codeStyles/
+!.idea/inspectionProfiles/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.settings/
+*.sublime-project
+*.sublime-workspace
+
+# Logs and Temporary Files
+*.log
+logs/
+*.tmp
+*.temp
+tmp/
+temp/
+*.pid
+*.seed
+*.pid.lock
+
+# Backup Files
+*.bak
+*.backup
+*.old
+
+# Build Artifacts
+dist/
+build/
+*.tar.gz
+*.zip
+
+# Python (if using Python for scripts/tools)
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+.venv
+
+# Node.js (if using Node for tooling)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Allow certain example/template files
+!*.example
+!*.template
