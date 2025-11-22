@@ -1,0 +1,28 @@
+{
+  "service": {
+    "name": "vault",
+    "port": 8200,
+    "tags": ["vault", "secrets"],
+    "check": {
+      "id": "vault-health",
+      "name": "Vault Health Check",
+      "http": "http://127.0.0.1:8200/v1/sys/health",
+      "method": "GET",
+      "interval": "10s",
+      "timeout": "2s"
+    },
+    "connect": {
+      "sidecar_service": {
+        "port": 8201,
+        "proxy": {
+          "upstreams": [
+            {
+              "destination_name": "consul",
+              "local_bind_port": 8500
+            }
+          ]
+        }
+      }
+    }
+  }
+}

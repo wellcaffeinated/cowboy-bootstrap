@@ -1,0 +1,33 @@
+---
+- name: Install Consul
+  ansible.builtin.apt:
+    name: consul
+    state: present
+  notify:
+    - restart-consul
+
+- name: Create Consul data directory
+  ansible.builtin.file:
+    path: /opt/consul
+    state: directory
+    owner: consul
+    group: consul
+    mode: '0750'
+
+- name: Create Consul config directory
+  ansible.builtin.file:
+    path: /etc/consul.d
+    state: directory
+    owner: consul
+    group: consul
+    mode: '0750'
+
+- name: Deploy Consul server configuration
+  ansible.builtin.template:
+    src: consul-server.hcl.j2
+    dest: /etc/consul.d/consul.hcl
+    owner: consul
+    group: consul
+    mode: '0640'
+  notify:
+    - restart-consul

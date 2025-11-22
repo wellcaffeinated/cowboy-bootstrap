@@ -60,11 +60,19 @@ Nodes connect to bootstrap LAN and:
 **Goal:** Extend current bootstrap to prepare the bootstrap server
 
 **Tasks:**
-- [ ] Add `consul` role to install Consul
+- [ ] Add `hashicorp` role for shared GPG key and repository setup
+- [ ] Add `consul` role to install Consul server
+  - Install Consul from official HashiCorp repository
+  - Configure Consul server mode
+  - **Enable Consul Connect for service mesh**
+  - Configure built-in CA for mTLS certificates
+  - Enable gRPC port (8502) for Connect
 - [ ] Add `vault` role to install HashiCorp Vault
   - Install Vault from official HashiCorp repository
   - Configure Vault server mode
   - Set up Consul storage backend for Vault
+  - **Register Vault as Consul service with Connect sidecar**
+  - **Configure service-to-service mTLS via Connect**
   - Initialize and unseal Vault (store root token and unseal keys securely)
   - Enable AppRole and SSH auth methods
 - [ ] Add `terraform` role (optional installation)
@@ -81,6 +89,7 @@ Nodes connect to bootstrap LAN and:
 - Bootstrap server can provision itself with all required services
 - Network routing operational between both NICs
 - Nomad, Consul, and Vault running in server mode
+- **Consul Connect enabled with automatic mTLS for services**
 - Vault initialized and integrated with Consul storage backend
 
 ### Phase 2: PXE Boot Infrastructure
@@ -252,9 +261,12 @@ Nodes connect to bootstrap LAN and:
 
 ### Consul
 - Service discovery and mesh networking
+- **Consul Connect service mesh with automatic mTLS**
+- Built-in Certificate Authority for service certificates
 - Stores provisioning profiles (KV store)
 - Health checking and monitoring
-- Service-to-service communication
+- Service-to-service communication secured by Connect
+- Provides encrypted storage backend for Vault
 
 ### Nomad
 - Orchestrates all containerized services
@@ -262,15 +274,17 @@ Nodes connect to bootstrap LAN and:
 - Runs Ansible jobs for ongoing management
 - Handles service lifecycle
 - Integrates with Vault for workload secrets
+- Native Consul Connect integration for service mesh
 
 ### Vault
 - Centralized secrets management
 - Dynamic secrets generation
 - Encryption as a service
 - Uses Consul as storage backend for HA
+- **Secured via Consul Connect mTLS for service communication**
 - AppRole authentication for Nomad workloads
 - SSH secrets engine for node access
-- PKI secrets engine for certificate management
+- PKI secrets engine for certificate management (supplementing Consul Connect CA)
 
 ### Ansible
 - Initial node configuration via `begin.sh`
@@ -398,20 +412,32 @@ Internet
 **Recommendation:** Start with MAC address mapping, add interactive menu later
 
 ### 3. Security Model
-**Decision needed:** What security measures should be implemented?
+**Decision:** Implement defense-in-depth security from Phase 1
 
-**Considerations:**
-- Vault for secrets management (implemented in Phase 1)
-- Consul gossip encryption (strongly recommended)
-- Consul ACLs (recommended for production)
-- Nomad ACLs (recommended for production)
-- Vault-generated certificates for mTLS between services (leveraging PKI engine)
-- Bootstrap LAN isolation (physical security)
+**Security Layers:**
+- **Consul Connect mTLS** (implemented in Phase 1)
+  - Automatic service-to-service encryption via Consul's built-in CA
+  - Zero-config mTLS for all registered services
+  - Certificate rotation handled automatically
+- **Vault for secrets management** (implemented in Phase 1)
+  - Centralized storage for sensitive credentials
+  - Dynamic secrets generation
+  - Encryption as a service
+- **Consul gossip encryption** (Phase 4)
+  - Encrypts Consul's internal cluster communication
+- **Consul ACLs** (Phase 4)
+  - Fine-grained access control for services and KV store
+- **Nomad ACLs** (Phase 4)
+  - Workload authorization and job submission control
+- **Vault PKI engine** (Phase 4+)
+  - Can supplement or replace Connect CA for specific use cases
+  - Generates certificates for non-Connect services
+- **Bootstrap LAN isolation** (physical security)
 
-**Recommendation:**
-- Phase 1: Deploy Vault for secrets management
-- Phase 4: Implement Consul/Nomad gossip encryption and ACLs, tokens managed in Vault
-- Phase 4+: Enable mTLS using Vault PKI engine for service certificates
+**Implementation Timeline:**
+- Phase 1: Consul Connect + Vault (automatic mTLS and secrets management)
+- Phase 4: Add gossip encryption and ACLs, tokens managed in Vault
+- Phase 4+: Extend PKI capabilities as needed
 
 ### 4. Secrets Management
 **Decision:** HashiCorp Vault will be used for all secrets management.
@@ -480,16 +506,17 @@ This approach balances safety with automation, ensuring updates are tested befor
 The bootstrap infrastructure will be considered successful when:
 
 1. ✅ Bootstrap server can provision itself from clean Ubuntu install
-2. ✅ Vault operational with Consul backend, secrets management functional
-3. ✅ New nodes can PXE boot and automatically install Ubuntu
-4. ✅ Nodes automatically execute `begin.sh` and join cluster
-5. ✅ Multiple provisioning profiles available for different roles (including dev/prod)
-6. ✅ Consul mesh operational with service discovery
-7. ✅ Nomad can schedule workloads across cluster with Vault integration
-8. ✅ Ansible tasks can be run cluster-wide via Nomad jobs
-9. ✅ Dev→prod update workflow operational (updates tested on dev nodes before production)
-10. ✅ Nodes can be migrated to production network post-bootstrap
-11. ✅ System documented and reproducible
+2. ✅ Consul Connect operational with automatic mTLS for service-to-service communication
+3. ✅ Vault operational with Consul backend, secrets management functional
+4. ✅ New nodes can PXE boot and automatically install Ubuntu
+5. ✅ Nodes automatically execute `begin.sh` and join cluster
+6. ✅ Multiple provisioning profiles available for different roles (including dev/prod)
+7. ✅ Consul mesh operational with service discovery and Connect enabled
+8. ✅ Nomad can schedule workloads across cluster with Vault integration and Connect support
+9. ✅ Ansible tasks can be run cluster-wide via Nomad jobs
+10. ✅ Dev→prod update workflow operational (updates tested on dev nodes before production)
+11. ✅ Nodes can be migrated to production network post-bootstrap
+12. ✅ System documented and reproducible
 
 ## References
 

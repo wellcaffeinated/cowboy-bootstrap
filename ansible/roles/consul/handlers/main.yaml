@@ -1,8 +1,8 @@
 ---
-- name: Restart Nomad service
+- name: Restart Consul service
   ansible.builtin.service:
-    name: nomad
+    name: consul
     state: restarted
   delegate_to: local-host
   become: true
-  listen: restart-nomad
+  listen: restart-consul

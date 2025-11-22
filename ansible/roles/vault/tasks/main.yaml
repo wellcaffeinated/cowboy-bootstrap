@@ -1,0 +1,43 @@
+---
+- name: Install Vault
+  ansible.builtin.apt:
+    name: vault
+    state: present
+  notify:
+    - restart-vault
+
+- name: Create Vault data directory
+  ansible.builtin.file:
+    path: /opt/vault/data
+    state: directory
+    owner: vault
+    group: vault
+    mode: '0750'
+
+- name: Create Vault config directory
+  ansible.builtin.file:
+    path: /etc/vault.d
+    state: directory
+    owner: vault
+    group: vault
+    mode: '0750'
+
+- name: Deploy Vault server configuration
+  ansible.builtin.template:
+    src: vault-server.hcl.j2
+    dest: /etc/vault.d/vault.hcl
+    owner: vault
+    group: vault
+    mode: '0640'
+  notify:
+    - restart-vault
+
+- name: Deploy Vault Consul service definition
+  ansible.builtin.template:
+    src: vault-service.json.j2
+    dest: /etc/consul.d/vault-service.json
+    owner: consul
+    group: consul
+    mode: '0640'
+  notify:
+    - reload-consul

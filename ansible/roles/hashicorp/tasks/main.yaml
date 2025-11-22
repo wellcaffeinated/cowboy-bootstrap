@@ -1,0 +1,30 @@
+---
+- name: Install required packages for HashiCorp repository
+  ansible.builtin.apt:
+    name:
+      - wget
+      - gpg
+      - coreutils
+    state: present
+
+- name: Download HashiCorp GPG key
+  ansible.builtin.get_url:
+    url: "https://apt.releases.hashicorp.com/gpg"
+    dest: "/tmp/hashicorp.gpg"
+    mode: '0644'
+
+- name: Convert GPG key to keyring format
+  ansible.builtin.command:
+    cmd: "gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg /tmp/hashicorp.gpg"
+    creates: "/usr/share/keyrings/hashicorp-archive-keyring.gpg"
+
+- name: Add HashiCorp APT repository
+  ansible.builtin.apt_repository:
+    repo: "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com {{ ansible_lsb.codename }} main"
+    state: present
+    filename: hashicorp
+
+- name: Update APT cache
+  ansible.builtin.apt:
+    update_cache: yes
+    cache_valid_time: 3600

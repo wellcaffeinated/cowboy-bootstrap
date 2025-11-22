@@ -1,0 +1,15 @@
+---
+- name: Restart Vault service
+  ansible.builtin.service:
+    name: vault
+    state: restarted
+  delegate_to: local-host
+  become: true
+  listen: restart-vault
+
+- name: Reload Consul configuration
+  ansible.builtin.command:
+    cmd: consul reload
+  delegate_to: local-host
+  become: true
+  listen: reload-consul
