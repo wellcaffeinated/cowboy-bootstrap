@@ -1,0 +1,10 @@
+---
+# Aspen Generic Worker Node Configuration
+# This is a standard worker node that joins the cluster
+
+# Server addresses (change to match your bootstrap server)
+consul_server_address: "192.168.100.1"
+nomad_server_address: "192.168.100.1"
+vault_address: "http://192.168.100.1:8200"
+
+# No network interface configuration needed (single NIC)

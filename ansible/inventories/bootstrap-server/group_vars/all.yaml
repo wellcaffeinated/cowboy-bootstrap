@@ -1,0 +1,12 @@
+---
+# Bootstrap Server Configuration
+# This is the control plane server with dual-NIC setup
+
+# Network interfaces (adjust to match your hardware)
+internet_interface: "eno1"
+bootstrap_lan_interface: "enx00e04c1b3a80"  # Change to "eth1" in production if needed
+
+# Bootstrap LAN network
+bootstrap_lan_ip: "192.168.100.1"
+bootstrap_lan_cidr: "24"
+bootstrap_lan_network: "192.168.100.0/24"

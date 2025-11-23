@@ -8,8 +8,30 @@ fi
 
 # --- CONFIG ---
 ANSIBLE_IMAGE="cowboy-bootstrap-ansible"
-PLAYBOOK="/ansible/setup.yaml"
 SSH_KEY="$HOME/.ssh/id_ed25519_ansible"
+
+# Bootstrap profile selection (default: aspen-generic)
+PROFILE="${1:-aspen-generic}"
+
+case "$PROFILE" in
+  bootstrap-server)
+    INVENTORY="/ansible/inventories/bootstrap-server/hosts"
+    PLAYBOOK="/ansible/bootstrap-server.yaml"
+    ;;
+  aspen-generic)
+    INVENTORY="/ansible/inventories/aspen-generic/hosts"
+    PLAYBOOK="/ansible/aspen-generic.yaml"
+    ;;
+  *)
+    echo "Error: Unknown profile '$PROFILE'"
+    echo "Usage: $0 [bootstrap-server|aspen-generic]"
+    exit 1
+    ;;
+esac
+
+echo "Using profile: $PROFILE"
+echo "  Inventory: $INVENTORY"
+echo "  Playbook: $PLAYBOOK"
 
 # Generate an SSH key if it doesn’t exist
 if [ ! -f "$SSH_KEY" ]; then
@@ -29,5 +51,6 @@ docker run --rm -it \
     -v /:/host \
     -v "$SSH_KEY":/root/.ssh/id_ed25519:ro \
     "$ANSIBLE_IMAGE" \
+    -i "$INVENTORY" \
     -c community.general.chroot \
     -D "$PLAYBOOK"

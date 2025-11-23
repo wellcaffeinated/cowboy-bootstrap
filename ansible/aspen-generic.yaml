@@ -1,0 +1,17 @@
+---
+- hosts: chroot
+  become: yes
+  become_user: root
+  become_method: sudo
+
+  roles:
+    - base
+    - chrony
+    - users
+    - ssh
+    # No network role - single NIC nodes don't need NAT setup
+    - hashicorp
+    # TODO: Create consul-client role for worker nodes
+    # - consul-client
+    # TODO: Create nomad-client role for worker nodes
+    # - nomad-client
