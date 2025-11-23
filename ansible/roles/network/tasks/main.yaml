@@ -32,7 +32,7 @@
 - name: Configure UFW NAT rules
   ansible.builtin.blockinfile:
     path: /etc/ufw/before.rules
-    insertbefore: '^# Don.t delete these required lines'
+    insertbefore: '^# Do not delete these required lines'
     marker: "# {mark} ANSIBLE MANAGED BOOTSTRAP LAN NAT"
     block: |
       # NAT table rules for bootstrap LAN
