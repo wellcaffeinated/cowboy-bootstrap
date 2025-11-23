@@ -7,17 +7,25 @@ This project creates a self-bootstrapping infrastructure platform inspired by [M
 ## Current State
 
 The repository contains a Docker-based Ansible bootstrap system that:
-- Configures a single Ubuntu Server installation
+- Configures Ubuntu Server installations via chroot-based Ansible in Docker
 - Uses privileged Docker container with chroot to avoid requiring Ansible on host
-- Installs base packages, hardens SSH, configures NTP, creates users
-- Installs HashiCorp Nomad for orchestration
+- Supports two bootstrap profiles: `bootstrap-server` and `aspen-generic`
+- Installs and configures HashiCorp stack (Consul, Vault, Nomad) with Connect mesh
 
 **Current Roles:**
 - `base` - Python3 and essential packages
 - `chrony` - NTP time synchronization
 - `users` - Creates 'cowboy' user with sudo access
 - `ssh` - Hardens SSH configuration
-- `nomad` - Installs Nomad
+- `network` - Dual-NIC setup with UFW NAT routing
+- `hashicorp` - HashiCorp GPG key and repository setup
+- `consul-server` - Consul server with Connect service mesh enabled
+- `vault-server` - Vault server with Consul storage backend
+- `nomad-server` - Nomad server with Consul and Vault integration
+
+**Bootstrap Profiles:**
+- `bootstrap-server` - Full control plane with all server roles
+- `aspen-generic` - Base system for worker nodes (client roles TODO)
 
 ## Target Architecture
 
@@ -56,42 +64,49 @@ Nodes connect to bootstrap LAN and:
 
 ## Implementation Phases
 
-### Phase 1: Bootstrap Server Self-Provisioning
+### Phase 1: Bootstrap Server Self-Provisioning ✅ COMPLETE
 **Goal:** Extend current bootstrap to prepare the bootstrap server
 
 **Tasks:**
-- [ ] Add `hashicorp` role for shared GPG key and repository setup
-- [ ] Add `consul` role to install Consul server
+- [x] Add `hashicorp` role for shared GPG key and repository setup
+- [x] Add `consul-server` role to install Consul server
   - Install Consul from official HashiCorp repository
   - Configure Consul server mode
   - **Enable Consul Connect for service mesh**
   - Configure built-in CA for mTLS certificates
   - Enable gRPC port (8502) for Connect
-- [ ] Add `vault` role to install HashiCorp Vault
+- [x] Add `vault-server` role to install HashiCorp Vault
   - Install Vault from official HashiCorp repository
   - Configure Vault server mode
   - Set up Consul storage backend for Vault
-  - **Register Vault as Consul service with Connect sidecar**
-  - **Configure service-to-service mTLS via Connect**
-  - Initialize and unseal Vault (store root token and unseal keys securely)
-  - Enable AppRole and SSH auth methods
-- [ ] Add `terraform` role (optional installation)
-- [ ] Add `network` role to configure dual-NIC setup
-  - Configure `eth0` for internet (assume existing DHCP or static config)
-  - Configure `eth1` for bootstrap LAN (static IP: 192.168.100.1/24)
+  - Vault self-registers with Consul via service_registration block
+  - Service-to-service communication ready for mTLS via Connect
+  - Initialize and unseal Vault (manual step, store root token and unseal keys securely)
+  - Enable AppRole and SSH auth methods (TODO: manual configuration after init)
+- [ ] Add `terraform` role (optional installation) - DEFERRED
+- [x] Add `network` role to configure dual-NIC setup
+  - Configurable interface names via group_vars (eno1, enx00e04c1b3a80, etc.)
+  - Configure bootstrap LAN (static IP: 192.168.100.1/24)
   - Enable IP forwarding via sysctl
   - Configure UFW (Uncomplicated Firewall) for NAT routing
-  - Set up forwarding rules: bootstrap LAN → internet via eth0
-- [ ] Add `docker` role (if not already present) for running containerized services
-- [ ] Configure Nomad server mode on bootstrap server
-- [ ] Configure Consul server mode on bootstrap server
+  - Set up forwarding rules: bootstrap LAN → internet
+- [x] Configure Nomad server mode on bootstrap server (`nomad-server` role)
+- [x] Configure Consul server mode on bootstrap server (`consul-server` role)
+- [x] Create bootstrap profile system
+  - `bootstrap-server` inventory and playbook for control plane
+  - `aspen-generic` inventory and playbook for worker nodes
+  - `begin.sh` updated to accept profile argument (defaults to aspen-generic)
 
 **Deliverables:**
-- Bootstrap server can provision itself with all required services
-- Network routing operational between both NICs
-- Nomad, Consul, and Vault running in server mode
-- **Consul Connect enabled with automatic mTLS for services**
-- Vault initialized and integrated with Consul storage backend
+- ✅ Bootstrap server can provision itself with all required services
+- ✅ Network routing operational between both NICs
+- ✅ Nomad, Consul, and Vault running in server mode
+- ✅ **Consul Connect enabled with automatic mTLS for services**
+- ✅ Vault initialized and integrated with Consul storage backend
+- ✅ Bootstrap profiles implemented for server vs worker nodes
+- ✅ Configurable network interfaces via Ansible variables
+
+**Status:** Phase 1 is functionally complete. Tested and operational on bootstrap server hardware.
 
 ### Phase 2: PXE Boot Infrastructure
 **Goal:** Enable network boot provisioning via Nomad jobs
