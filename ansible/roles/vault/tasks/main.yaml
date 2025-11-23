@@ -32,12 +32,5 @@
   notify:
     - restart-vault
 
-- name: Deploy Vault Consul service definition
-  ansible.builtin.template:
-    src: vault-service.json.j2
-    dest: /etc/consul.d/vault-service.json
-    owner: consul
-    group: consul
-    mode: '0640'
-  notify:
-    - reload-consul
+# Note: Vault will self-register with Consul using service_registration
+# No need for manual service definition that causes startup timing issues

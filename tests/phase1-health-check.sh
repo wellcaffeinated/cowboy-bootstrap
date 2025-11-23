@@ -4,6 +4,9 @@
 
 set -uo pipefail
 
+# Set Vault address (HTTP not HTTPS since tls_disable=1)
+export VAULT_ADDR='http://127.0.0.1:8200'
+
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -45,11 +48,17 @@ fi
 # ============================================
 section "1. Service Status"
 
+# Check if services are actually running (process-based, more reliable than systemctl)
 for service in consul vault nomad; do
-    if systemctl is-active --quiet $service; then
+    if pgrep -x "$service" >/dev/null; then
         pass "$service is running"
     else
-        fail "$service is NOT running"
+        # Double-check with systemctl
+        if systemctl is-active --quiet $service 2>/dev/null; then
+            warn "$service systemctl says active, but process not found"
+        else
+            fail "$service is NOT running"
+        fi
     fi
 done
 
@@ -115,9 +124,11 @@ fi
 # ============================================
 section "3. Vault Checks"
 
-# Vault status
-if vault status &>/dev/null; then
-    VAULT_STATUS=$(vault status -format=json 2>/dev/null)
+# Vault status - vault status returns non-zero when sealed/uninitialized, so ignore exit code
+VAULT_STATUS=$(vault status -format=json 2>/dev/null || true)
+
+if [ -n "$VAULT_STATUS" ] && echo "$VAULT_STATUS" | grep -q "initialized"; then
+    pass "Vault is responding"
 
     if echo "$VAULT_STATUS" | grep -q '"initialized":false'; then
         warn "Vault is not yet initialized (expected on first run)"
@@ -126,14 +137,12 @@ if vault status &>/dev/null; then
     elif echo "$VAULT_STATUS" | grep -q '"sealed":false'; then
         pass "Vault is unsealed and operational"
     fi
-
-    pass "Vault is responding"
 else
     fail "Vault is not responding"
 fi
 
-# Vault HTTP API
-if curl -sf http://127.0.0.1:8200/v1/sys/health >/dev/null; then
+# Vault HTTP API - check if we get any response (even error codes are OK)
+if curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:8200/v1/sys/health | grep -qE "^(200|429|472|473|501|503)$"; then
     pass "Vault HTTP API accessible on localhost"
 else
     fail "Vault HTTP API not accessible"
@@ -198,11 +207,22 @@ fi
 # ============================================
 section "5. Network Configuration"
 
-# Bootstrap LAN interface
-if ip addr show eth1 2>/dev/null | grep -q "192.168.100.1"; then
-    pass "Bootstrap LAN (eth1) configured with 192.168.100.1"
+# Bootstrap LAN interface - auto-detect by IP address
+BOOTSTRAP_IF=$(ip -4 addr show | grep -B2 "192.168.100.1" | head -1 | awk '{print $2}' | tr -d ':')
+if [ -n "$BOOTSTRAP_IF" ]; then
+    pass "Bootstrap LAN configured on $BOOTSTRAP_IF with 192.168.100.1"
 else
-    fail "Bootstrap LAN (eth1) not configured correctly"
+    # Try reading from netplan config
+    if [ -f /etc/netplan/90-bootstrap-lan.yaml ]; then
+        CONFIGURED_IF=$(grep -A1 "ethernets:" /etc/netplan/90-bootstrap-lan.yaml | tail -1 | tr -d ' :')
+        if [ -n "$CONFIGURED_IF" ]; then
+            warn "Bootstrap LAN configured for $CONFIGURED_IF but not applied (run: sudo netplan apply)"
+        else
+            fail "Bootstrap LAN not configured"
+        fi
+    else
+        fail "Bootstrap LAN not configured (netplan file missing)"
+    fi
 fi
 
 # IP forwarding

@@ -12,7 +12,7 @@
     state: present
     reload: yes
 
-- name: Configure bootstrap LAN interface (eth1)
+- name: Configure bootstrap LAN interface
   ansible.builtin.template:
     src: bootstrap-lan.yaml.j2
     dest: /etc/netplan/90-bootstrap-lan.yaml
@@ -38,8 +38,8 @@
       # NAT table rules for bootstrap LAN
       *nat
       :POSTROUTING ACCEPT [0:0]
-      # Forward traffic from bootstrap LAN (eth1) to internet (eth0)
-      -A POSTROUTING -s 192.168.100.0/24 -o eth0 -j MASQUERADE
+      # Forward traffic from bootstrap LAN to internet
+      -A POSTROUTING -s {{ bootstrap_lan_network }} -o {{ internet_interface }} -j MASQUERADE
       COMMIT
     backup: yes
   notify:
@@ -54,14 +54,14 @@
 - name: Allow traffic from bootstrap LAN
   community.general.ufw:
     rule: allow
-    from_ip: 192.168.100.0/24
+    from_ip: "{{ bootstrap_lan_network }}"
 
 - name: Allow forwarding from bootstrap LAN to internet
   community.general.ufw:
     route: yes
     rule: allow
-    interface_in: eth1
-    interface_out: eth0
+    interface_in: "{{ bootstrap_lan_interface }}"
+    interface_out: "{{ internet_interface }}"
 
 - name: Enable UFW
   community.general.ufw:

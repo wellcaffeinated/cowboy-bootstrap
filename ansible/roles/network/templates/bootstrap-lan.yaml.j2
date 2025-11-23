@@ -4,8 +4,8 @@
 network:
   version: 2
   ethernets:
-    eth1:
+    {{ bootstrap_lan_interface }}:
       addresses:
-        - 192.168.100.1/24
+        - {{ bootstrap_lan_ip }}/{{ bootstrap_lan_cidr }}
       dhcp4: no
       dhcp6: no

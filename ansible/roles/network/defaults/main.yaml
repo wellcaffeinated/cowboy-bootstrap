@@ -1,0 +1,14 @@
+---
+# Network role default variables
+# Can be overridden in inventory or group_vars
+
+# Interface for internet connectivity (primary)
+internet_interface: "eno1"
+
+# Interface for bootstrap LAN
+bootstrap_lan_interface: "eth1"
+
+# Bootstrap LAN IP address and subnet
+bootstrap_lan_ip: "192.168.100.1"
+bootstrap_lan_cidr: "24"
+bootstrap_lan_network: "192.168.100.0/24"

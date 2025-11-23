@@ -10,8 +10,13 @@ server = true
 # Bootstrap expect - single server for bootstrap server
 bootstrap_expect = 1
 
-# Bind addresses
-bind_addr = "0.0.0.0"
+# Bind to primary private IP (required with multiple interfaces)
+bind_addr = "{{ ansible_default_ipv4.address }}"
+
+# Advertise the same address for cluster communication
+advertise_addr = "{{ ansible_default_ipv4.address }}"
+
+# Allow clients to connect from any interface
 client_addr = "0.0.0.0"
 
 # Datacenter
