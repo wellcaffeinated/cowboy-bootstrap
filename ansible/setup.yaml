@@ -9,4 +9,8 @@
     - chrony
     - users
     - ssh
+    - network
+    - hashicorp
+    - consul
+    - vault
     - nomad

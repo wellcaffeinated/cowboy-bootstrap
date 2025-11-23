@@ -77,10 +77,11 @@ Nodes connect to bootstrap LAN and:
   - Enable AppRole and SSH auth methods
 - [ ] Add `terraform` role (optional installation)
 - [ ] Add `network` role to configure dual-NIC setup
-  - Configure `eth0` for internet
-  - Configure `eth1` for bootstrap LAN (static IP, e.g., 192.168.100.1/24)
-  - Enable IP forwarding
-  - Configure iptables NAT for bootstrap LAN → internet
+  - Configure `eth0` for internet (assume existing DHCP or static config)
+  - Configure `eth1` for bootstrap LAN (static IP: 192.168.100.1/24)
+  - Enable IP forwarding via sysctl
+  - Configure UFW (Uncomplicated Firewall) for NAT routing
+  - Set up forwarding rules: bootstrap LAN → internet via eth0
 - [ ] Add `docker` role (if not already present) for running containerized services
 - [ ] Configure Nomad server mode on bootstrap server
 - [ ] Configure Consul server mode on bootstrap server

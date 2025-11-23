@@ -1,0 +1,14 @@
+---
+- name: Apply netplan configuration
+  ansible.builtin.command:
+    cmd: netplan apply
+  delegate_to: local-host
+  become: true
+  listen: apply-netplan
+
+- name: Reload UFW
+  community.general.ufw:
+    state: reloaded
+  delegate_to: local-host
+  become: true
+  listen: reload-ufw

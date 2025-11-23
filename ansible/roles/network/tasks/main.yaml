@@ -1,0 +1,68 @@
+---
+- name: Install UFW
+  ansible.builtin.apt:
+    name: ufw
+    state: present
+
+- name: Enable IP forwarding in sysctl
+  ansible.builtin.sysctl:
+    name: net.ipv4.ip_forward
+    value: '1'
+    sysctl_set: yes
+    state: present
+    reload: yes
+
+- name: Configure bootstrap LAN interface (eth1)
+  ansible.builtin.template:
+    src: bootstrap-lan.yaml.j2
+    dest: /etc/netplan/90-bootstrap-lan.yaml
+    owner: root
+    group: root
+    mode: '0644'
+  notify:
+    - apply-netplan
+
+- name: Enable UFW routing/forwarding
+  ansible.builtin.lineinfile:
+    path: /etc/default/ufw
+    regexp: '^DEFAULT_FORWARD_POLICY='
+    line: 'DEFAULT_FORWARD_POLICY="ACCEPT"'
+    backup: yes
+
+- name: Configure UFW NAT rules
+  ansible.builtin.blockinfile:
+    path: /etc/ufw/before.rules
+    insertbefore: '^# Don.t delete these required lines'
+    marker: "# {mark} ANSIBLE MANAGED BOOTSTRAP LAN NAT"
+    block: |
+      # NAT table rules for bootstrap LAN
+      *nat
+      :POSTROUTING ACCEPT [0:0]
+      # Forward traffic from bootstrap LAN (eth1) to internet (eth0)
+      -A POSTROUTING -s 192.168.100.0/24 -o eth0 -j MASQUERADE
+      COMMIT
+    backup: yes
+  notify:
+    - reload-ufw
+
+- name: Allow SSH through UFW
+  community.general.ufw:
+    rule: allow
+    port: '22'
+    proto: tcp
+
+- name: Allow traffic from bootstrap LAN
+  community.general.ufw:
+    rule: allow
+    from_ip: 192.168.100.0/24
+
+- name: Allow forwarding from bootstrap LAN to internet
+  community.general.ufw:
+    route: yes
+    rule: allow
+    interface_in: eth1
+    interface_out: eth0
+
+- name: Enable UFW
+  community.general.ufw:
+    state: enabled
