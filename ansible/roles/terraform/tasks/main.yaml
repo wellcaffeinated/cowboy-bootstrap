@@ -1,0 +1,13 @@
+---
+- name: Install Terraform
+  ansible.builtin.apt:
+    name: terraform
+    state: present
+    update_cache: yes
+
+- name: Install Terraform bash completion
+  ansible.builtin.shell:
+    cmd: terraform -install-autocomplete
+  become: no
+  failed_when: false
+  changed_when: false

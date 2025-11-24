@@ -63,6 +63,24 @@
     interface_in: "{{ bootstrap_lan_interface }}"
     interface_out: "{{ internet_interface }}"
 
+- name: Allow DHCP server on bootstrap LAN (UDP 67)
+  community.general.ufw:
+    rule: allow
+    port: '67'
+    proto: udp
+    interface: "{{ bootstrap_lan_interface }}"
+    direction: in
+  when: enable_dhcp_server | default(false)
+
+- name: Allow DHCP client on bootstrap LAN (UDP 68)
+  community.general.ufw:
+    rule: allow
+    port: '68'
+    proto: udp
+    interface: "{{ bootstrap_lan_interface }}"
+    direction: out
+  when: enable_dhcp_server | default(false)
+
 - name: Enable UFW
   community.general.ufw:
     state: enabled

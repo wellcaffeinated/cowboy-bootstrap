@@ -12,3 +12,7 @@ bootstrap_lan_interface: "eth1"
 bootstrap_lan_ip: "192.168.100.1"
 bootstrap_lan_cidr: "24"
 bootstrap_lan_network: "192.168.100.0/24"
+
+# Enable DHCP server UFW rules
+# Set to true to allow DHCP traffic (UDP 67/68) on bootstrap_lan_interface
+enable_dhcp_server: false

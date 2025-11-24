@@ -10,6 +10,9 @@ On a clean Ubuntu Server install with two network interfaces:
 
 ```bash
 sudo ./begin.sh bootstrap-server
+cd terraform
+terraform init
+terraform apply
 ```
 
 Installs Consul, Vault, and Nomad in **server mode** with dual-NIC network configuration.

@@ -6,6 +6,8 @@
     shell: /bin/bash
     state: present
     create_home: yes
+    groups: docker
+    append: yes
 
 # Add cowboy to sudoers (passwordless)
 - name: Allow cowboy to sudo without password

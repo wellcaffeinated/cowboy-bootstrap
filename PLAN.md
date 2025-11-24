@@ -83,7 +83,10 @@ Nodes connect to bootstrap LAN and:
   - Service-to-service communication ready for mTLS via Connect
   - Initialize and unseal Vault (manual step, store root token and unseal keys securely)
   - Enable AppRole and SSH auth methods (TODO: manual configuration after init)
-- [ ] Add `terraform` role (optional installation) - DEFERRED
+- [x] Add `terraform` role for infrastructure as code
+  - Install Terraform from official HashiCorp repository
+  - Used for building Docker images and deploying Nomad jobs
+  - Manages infrastructure declaratively with state tracking
 - [x] Add `network` role to configure dual-NIC setup
   - Configurable interface names via group_vars (eno1, enx00e04c1b3a80, etc.)
   - Configure bootstrap LAN (static IP: 192.168.100.1/24)
@@ -111,15 +114,25 @@ Nodes connect to bootstrap LAN and:
 ### Phase 2: PXE Boot Infrastructure
 **Goal:** Enable network boot provisioning via Nomad jobs
 
+**Architecture Decision:** Using **dnsmasq + Shoelaces** for multi-architecture support (NUCs/amd64 and Raspberry Pi/arm64).
+
 **Tasks:**
-- [ ] Create Nomad job definition for Pixiecore service
-  - Container image with Pixiecore
+- [ ] Create Nomad job for dnsmasq service
+  - DHCP server for bootstrap LAN (192.168.100.100-200)
+  - TFTP server for boot files
+  - Multi-architecture client detection (x86_64 EFI, ARM64 EFI)
   - Network mode: host (to bind DHCP/TFTP ports)
-  - Volume mounts for boot files and configs
-  - Configure DHCP range for bootstrap LAN (e.g., 192.168.100.100-200)
-  - Point to cloud-init configuration URL
+- [ ] Create Nomad job for Shoelaces service
+  - Manages PXE boot configurations
+  - Serves boot profiles based on client architecture and MAC address
+  - Provides API for dynamic boot configuration
+  - Integrates with dnsmasq for boot file selection
+- [ ] Download and verify Ubuntu 24.04.3 netboot files for both architectures
+  - AMD64 netboot files (for NUCs) with checksums
+  - ARM64 netboot files (for Raspberry Pi) with checksums
+  - Store checksums in git, download files via Nomad artifacts
 - [ ] Create Nomad job for HTTP file server
-  - Serves Ubuntu netboot images
+  - Serves architecture-specific Ubuntu netboot images
   - Hosts cloud-init user-data and meta-data
   - Serves this repository's `begin.sh` script
   - Serves repository tarball or git clone endpoint
@@ -127,14 +140,11 @@ Nodes connect to bootstrap LAN and:
   - Network configuration for bootstrap LAN
   - Script to download and execute `begin.sh`
   - Post-bootstrap tasks (report to Consul, etc.)
-- [ ] Create Ansible role: `bootstrap-server`
-  - Deploys Pixiecore Nomad job
-  - Deploys HTTP server Nomad job
-  - Generates cloud-init configs
 
 **Deliverables:**
-- Pixiecore running as Nomad job, serving PXE boot
-- HTTP server hosting boot files and scripts
+- dnsmasq running as Nomad job, serving DHCP and TFTP
+- Shoelaces running as Nomad job, managing multi-arch boot configs
+- HTTP server hosting boot files and scripts for both architectures
 - Cloud-init configuration that bootstraps new nodes
 
 ### Phase 3: Node Provisioning Profiles
@@ -225,6 +235,12 @@ Nodes connect to bootstrap LAN and:
     - Target nodes with `env=production` constraint
     - Rolling updates to minimize disruption
     - Automatic rollback on health check failures
+- [ ] **Enable CI/CD deployment via Cloudflare Tunnel**
+  - Deploy Cloudflare Tunnel as Nomad job to expose Nomad API
+  - Configure tunnel to expose: Nomad API (for deployments), Consul API (for service discovery), and Vault API (for secrets)
+  - Secure with Nomad/Consul/Vault ACL tokens
+  - **End goal:** Enable teams to deploy from their own GitHub repositories via GitHub Actions workflows, allowing autonomous deployment to the cluster without SSH access or self-hosted runners
+  - Document standard GitHub Actions workflow pattern for teams
 - [ ] Create management CLI or UI
   - Submit Ansible tasks as Nomad jobs
   - Monitor task execution

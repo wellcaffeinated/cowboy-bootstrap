@@ -47,6 +47,7 @@ advertise {
 plugin "docker" {
   config {
     allow_privileged = true
+    allow_caps = {{ ( nomad_default_caps + ( nomad_extra_caps | default([]) ) ) | to_json }}
     volumes {
       enabled = true
     }

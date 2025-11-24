@@ -10,3 +10,10 @@ bootstrap_lan_interface: "enx00e04c1b3a80"  # Change to "eth1" in production if 
 bootstrap_lan_ip: "192.168.100.1"
 bootstrap_lan_cidr: "24"
 bootstrap_lan_network: "192.168.100.0/24"
+
+nomad_extra_caps:
+  - net_admin
+  - net_raw
+
+# Enable DHCP server for bootstrap LAN
+enable_dhcp_server: true
