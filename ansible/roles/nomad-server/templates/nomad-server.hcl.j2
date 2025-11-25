@@ -7,6 +7,17 @@ data_dir = "/opt/nomad"
 # Datacenter
 datacenter = "boulder"
 
+acl {
+  enabled = true
+}
+
+# Advertise addresses
+advertise {
+  http = "{{ ansible_default_ipv4.address }}"
+  rpc = "{{ ansible_default_ipv4.address }}"
+  serf = "{{ ansible_default_ipv4.address }}"
+}
+
 # Server mode
 server {
   enabled = true
@@ -35,13 +46,6 @@ vault {
 
 # Bind addresses
 bind_addr = "0.0.0.0"
-
-# Advertise addresses
-advertise {
-  http = "{{ ansible_default_ipv4.address }}"
-  rpc = "{{ ansible_default_ipv4.address }}"
-  serf = "{{ ansible_default_ipv4.address }}"
-}
 
 # Enable Docker driver
 plugin "docker" {

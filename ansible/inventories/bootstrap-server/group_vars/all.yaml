@@ -17,3 +17,20 @@ nomad_extra_caps:
 
 # Enable DHCP server for bootstrap LAN
 enable_dhcp_server: true
+
+nomad_volumes:
+  - name: netboot
+    path: /nomad/netboot
+    read_only: false
+  # - name: zot_data
+  #   path: /nomad/zot
+  #   read_only: false
+  # - name: vmlogs_data
+  #   path: /nomad/vmlogs
+  #   read_only: false
+  # - name: ara_data
+  #   path: /nomad/ara
+  #   read_only: false
+  # - name: terrastate_data
+  #   path: /nomad/terrastate
+  #   read_only: false
