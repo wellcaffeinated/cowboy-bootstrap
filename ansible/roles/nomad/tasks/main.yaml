@@ -1,0 +1,15 @@
+---
+- name: Install Nomad
+  ansible.builtin.apt:
+    name: nomad
+    state: present
+
+- name: Install base config
+  template:
+    src: 10-base.hcl.j2
+    dest: /etc/nomad.d/10-base.hcl
+    owner: nomad
+    group: nomad
+    mode: 0640
+  notify:
+    - restart-nomad

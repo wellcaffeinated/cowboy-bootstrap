@@ -15,4 +15,5 @@
     - consul-server
     - vault-server
     - nomad-server
+    - nomad-client
     - terraform

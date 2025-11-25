@@ -35,23 +35,18 @@ job "dnsmasq" {
         force_pull   = false
         network_mode = "host"
 
-        # Mount /opt/netboot/ipxe → /netboot/ipxe
-        mount {
-          type     = "volume"
-          target   = "/netboot/ipxe"
-          source   = "netboot"
-          readonly = true
-          volume_options {
-            subpath = "ipxe"
-          }
-        }
-
         # Capabilities for network operations
         cap_add = [
           "NET_BIND_SERVICE",  # Bind to privileged ports
           "NET_ADMIN",         # Network configuration
           "NET_RAW",           # Raw sockets for DHCP
         ]
+      }
+
+      volume_mount {
+        volume      = "netboot"
+        destination = "/netboot"
+        read_only   = true
       }
 
       resources {

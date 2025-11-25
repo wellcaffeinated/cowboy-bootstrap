@@ -1,31 +1,8 @@
 ---
-- name: Install Nomad
-  ansible.builtin.apt:
-    name: nomad
-    state: present
-  notify:
-    - restart-nomad
-
-- name: Create Nomad data directory
-  ansible.builtin.file:
-    path: /opt/nomad
-    state: directory
-    owner: nomad
-    group: nomad
-    mode: '0750'
-
-- name: Create Nomad config directory
-  ansible.builtin.file:
-    path: /etc/nomad.d
-    state: directory
-    owner: nomad
-    group: nomad
-    mode: '0750'
-
 - name: Deploy Nomad server configuration
   ansible.builtin.template:
-    src: nomad-server.hcl.j2
-    dest: /etc/nomad.d/nomad.hcl
+    src: 20-server.hcl.j2
+    dest: /etc/nomad.d/20-server.hcl
     owner: nomad
     group: nomad
     mode: '0640'
