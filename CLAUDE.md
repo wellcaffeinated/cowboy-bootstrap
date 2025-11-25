@@ -42,7 +42,7 @@ The bootstrap process uses a unique architecture to avoid requiring Ansible on t
 
 ### Ansible Structure
 
-Roles are applied in this order (see `ansible/setup.yaml`):
+Roles are applied in this order (see `ansible/bootstrap-server.yaml` or `ansible/aspen-generic.yaml`):
 
 1. **base** - Installs Python3 (required for Ansible modules to work)
 2. **chrony** - Configures NTP time synchronization with NIST servers
@@ -80,13 +80,14 @@ docker run --rm -it \
     -v /:/host \
     -v ~/.ssh/id_ed25519_ansible:/root/.ssh/id_ed25519:ro \
     cowboy-bootstrap-ansible \
+    -i /ansible/inventories/bootstrap-server/hosts \
     -c community.general.chroot \
-    -D /ansible/setup.yaml
+    -D /ansible/bootstrap-server.yaml
 ```
 
 ### Testing Individual Roles
 
-To test a single role, modify `ansible/setup.yaml` to comment out other roles, then re-run.
+To test a single role, modify the appropriate playbook (`ansible/bootstrap-server.yaml` or `ansible/aspen-generic.yaml`) to comment out other roles, then re-run.
 
 ### Debugging Ansible in Docker
 
@@ -99,8 +100,9 @@ docker run --rm -it \
     -v /:/host \
     -v ~/.ssh/id_ed25519_ansible:/root/.ssh/id_ed25519:ro \
     cowboy-bootstrap-ansible \
+    -i /ansible/inventories/bootstrap-server/hosts \
     -c community.general.chroot \
-    -D -vvv /ansible/setup.yaml
+    -D -vvv /ansible/bootstrap-server.yaml
 ```
 
 ## Key Configuration Notes
