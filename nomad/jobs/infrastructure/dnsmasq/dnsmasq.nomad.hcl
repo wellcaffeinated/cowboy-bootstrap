@@ -1,3 +1,7 @@
+# dnsmasq - DHCP, DNS, and TFTP server for PXE boot
+# Runs on bootstrap server with host networking to bind DHCP/DNS/TFTP ports
+# Mounts /opt/netboot/ipxe for serving iPXE bootloader files
+
 job "dnsmasq" {
   datacenters = ["boulder"]
   type        = "service"
@@ -11,7 +15,14 @@ job "dnsmasq" {
       value     = "cowboy-bootstrap"
     }
 
-    # Host networking required for DHCP/TFTP
+    # Mount netboot directory from host
+    volume "netboot" {
+      type      = "host"
+      source    = "netboot"
+      read_only = true
+    }
+
+    # Host networking for DHCP (67/68), DNS (53), TFTP (69)
     network {
       mode = "host"
     }
@@ -21,14 +32,25 @@ job "dnsmasq" {
 
       config {
         image        = "cowboy-dnsmasq:1"
-        force_pull   = false  # Image is built locally, don't pull from registry
+        force_pull   = false
         network_mode = "host"
 
-        # Grant specific capabilities for DHCP/TFTP
+        # Mount /opt/netboot/ipxe → /netboot/ipxe
+        mount {
+          type     = "volume"
+          target   = "/netboot/ipxe"
+          source   = "netboot"
+          readonly = true
+          volume_options {
+            subpath = "ipxe"
+          }
+        }
+
+        # Capabilities for network operations
         cap_add = [
-          "NET_BIND_SERVICE",  # Bind to ports < 1024
+          "NET_BIND_SERVICE",  # Bind to privileged ports
           "NET_ADMIN",         # Network configuration
-          "NET_RAW",           # Raw packets for DHCP
+          "NET_RAW",           # Raw sockets for DHCP
         ]
       }
 
@@ -37,7 +59,6 @@ job "dnsmasq" {
         memory = 256
       }
 
-      # Restart policy - fail fast with retries
       restart {
         attempts = 5
         delay    = "5s"

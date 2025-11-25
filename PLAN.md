@@ -114,38 +114,58 @@ Nodes connect to bootstrap LAN and:
 ### Phase 2: PXE Boot Infrastructure
 **Goal:** Enable network boot provisioning via Nomad jobs
 
-**Architecture Decision:** Using **dnsmasq + Shoelaces** for multi-architecture support (NUCs/amd64 and Raspberry Pi/arm64).
+**Architecture Decision:** Using **dnsmasq + Shoelaces + Traefik** for PXE boot orchestration. **ARM64/Raspberry Pi 4+ is the primary target**, with x86_64 support to be added later.
+
+**Image Strategy:** Use pre-built Docker images and official Ubuntu ARM64 releases to avoid cross-compilation complexity.
+
+**Storage Strategy:** Netboot files stored in Nomad host volume (e.g., `/opt/netboot`), not in git repository. Only checksums and download scripts tracked in git.
 
 **Tasks:**
-- [ ] Create Nomad job for dnsmasq service
+- [x] Create Nomad job for dnsmasq service - DHCP + DNS forwarding operational
   - DHCP server for bootstrap LAN (192.168.100.100-200)
-  - TFTP server for boot files
-  - Multi-architecture client detection (x86_64 EFI, ARM64 EFI)
-  - Network mode: host (to bind DHCP/TFTP ports)
+  - DNS forwarding to upstream resolvers
+  - UFW rules configured (UDP 67/68)
+  - Network mode: host (to bind DHCP/DNS ports)
+- [ ] Configure Nomad host volume for netboot files
+  - Create `/opt/netboot` directory on bootstrap server
+  - Configure as Nomad host volume
+  - Shared across dnsmasq (TFTP) and Traefik (HTTP)
+- [ ] Update dnsmasq configuration for TFTP support
+  - Enable TFTP server in dnsmasq.conf
+  - Mount netboot volume for serving boot files
+  - ARM64-specific boot file paths for RPi4+
+- [ ] Create netboot download/setup job
+  - Downloads Ubuntu 24.04 LTS ARM64 netboot files
+  - Verifies GPG signatures and checksums
+  - Extracts to `/opt/netboot/ubuntu-24.04/arm64/`
+  - Runs as one-time or periodic Nomad batch job
+  - Checksums stored in git for verification
 - [ ] Create Nomad job for Shoelaces service
-  - Manages PXE boot configurations
+  - Use pre-built Shoelaces image or official release binary
+  - Manages PXE boot configurations and profiles
   - Serves boot profiles based on client architecture and MAC address
   - Provides API for dynamic boot configuration
   - Integrates with dnsmasq for boot file selection
-- [ ] Download and verify Ubuntu 24.04.3 netboot files for both architectures
-  - AMD64 netboot files (for NUCs) with checksums
-  - ARM64 netboot files (for Raspberry Pi) with checksums
-  - Store checksums in git, download files via Nomad artifacts
-- [ ] Create Nomad job for HTTP file server
-  - Serves architecture-specific Ubuntu netboot images
+- [ ] Create Nomad job for Traefik HTTP server
+  - Use official pre-built Traefik image (traefik:3.x)
+  - Consul Catalog integration for service discovery
+  - Mounts netboot volume for serving files
   - Hosts cloud-init user-data and meta-data
   - Serves this repository's `begin.sh` script
   - Serves repository tarball or git clone endpoint
-- [ ] Create cloud-init templates
+- [ ] Create cloud-init templates for RPi4+
   - Network configuration for bootstrap LAN
   - Script to download and execute `begin.sh`
+  - RPi-specific settings if needed
   - Post-bootstrap tasks (report to Consul, etc.)
 
 **Deliverables:**
-- dnsmasq running as Nomad job, serving DHCP and TFTP
-- Shoelaces running as Nomad job, managing multi-arch boot configs
-- HTTP server hosting boot files and scripts for both architectures
-- Cloud-init configuration that bootstraps new nodes
+- Nomad host volume configured for netboot files
+- dnsmasq running as Nomad job, serving DHCP, DNS, and TFTP
+- Netboot download job operational with checksum verification
+- Shoelaces running as Nomad job, managing RPi4+ boot configs
+- Traefik running as Nomad job, serving boot files with Consul integration
+- Cloud-init configuration that bootstraps RPi4+ nodes
 
 ### Phase 3: Node Provisioning Profiles
 **Goal:** Support different node types with specialized configurations

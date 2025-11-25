@@ -10,6 +10,7 @@
     - users
     - ssh
     - network
+    - netboot
     - hashicorp
     - consul-server
     - vault-server

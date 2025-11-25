@@ -1,0 +1,6 @@
+---
+# Netboot role default variables
+
+# Base directory for all PXE netboot files
+# Will be mounted as Nomad host volume
+netboot_base_dir: "/opt/netboot"

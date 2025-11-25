@@ -1,0 +1,24 @@
+---
+# Create directories for PXE netboot files
+# These directories are mounted as Nomad host volumes
+
+- name: Create netboot base directory
+  ansible.builtin.file:
+    path: "{{ netboot_base_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Create netboot subdirectories
+  ansible.builtin.file:
+    path: "{{ netboot_base_dir }}/{{ item }}"
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+  loop:
+    - ubuntu/24.04/arm64  # Ubuntu 24.04 LTS ARM64 netboot files
+    - ipxe                # iPXE boot scripts
+    - shoelaces/templates # Shoelaces boot config templates
+    - cloud-init          # Cloud-init user-data and meta-data
