@@ -1,4 +1,4 @@
-# Build dnsmasq Docker image with iPXE
+# Build dnsmasq Docker image
 resource "docker_image" "dnsmasq" {
   name = "cowboy-dnsmasq:1"
 
@@ -10,7 +10,7 @@ resource "docker_image" "dnsmasq" {
 
   keep_locally = true
   triggers = {
-    conf: file("${path.module}/${var.infra_path}/dnsmasq/dnsmasq.conf")
+    conf = filemd5("${path.module}/${var.infra_path}/dnsmasq/dnsmasq.conf")
   }
 }
 

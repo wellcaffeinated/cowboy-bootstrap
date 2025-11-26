@@ -2,5 +2,12 @@
 # Netboot role default variables
 
 # Base directory for all PXE netboot files
-# Will be mounted as Nomad host volume
 netboot_base_dir: "/opt/netboot"
+
+# Ubuntu version to download
+netboot_ubuntu_version: "24.04.3"
+
+# Architectures to support
+netboot_architectures:
+  - arm64
+  - amd64

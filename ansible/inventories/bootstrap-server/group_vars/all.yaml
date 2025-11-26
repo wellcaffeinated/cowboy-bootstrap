@@ -18,6 +18,9 @@ nomad_extra_caps:
 # Enable DHCP server for bootstrap LAN
 enable_dhcp_server: true
 
+# Netboot directory
+netboot_base_dir: "/nomad/netboot"
+
 nomad_volumes:
   - name: netboot
     path: /nomad/netboot

@@ -44,7 +44,19 @@ UBUNTU_VERSION="$1"
 ARCH="$2"
 OUTPUT_DIR="$3"
 ISO_FILENAME="ubuntu-${UBUNTU_VERSION}-live-server-${ARCH}.iso"
-BASE_URL="https://releases.ubuntu.com/${UBUNTU_VERSION}"
+
+case "${ARCH}" in
+  arm64)
+    BASE_URL="http://cdimage.ubuntu.com/ubuntu/releases/${UBUNTU_VERSION}/release"
+    ;;
+  amd64)
+    BASE_URL="https://releases.ubuntu.com/${UBUNTU_VERSION}"
+    ;;
+  *)
+    echo "FATAL: Unsupported architecture '${ARCH}'" >&2
+    exit 1
+    ;;
+esac
 
 # --- Execution ---
 
@@ -121,8 +133,7 @@ gpg --verify SHA256SUMS.gpg SHA256SUMS
 echo "==> GPG signature is valid."
 
 echo "==> Downloading Ubuntu Server ISO: ${ISO_FILENAME}..."
-# Use --progress-bar to show progress without excessive noise.
-curl -fSL --progress-bar -O "${BASE_URL}/${ISO_FILENAME}"
+curl -fsSL -O "${BASE_URL}/${ISO_FILENAME}"
 
 echo "==> Verifying SHA256 checksum of the ISO..."
 # Grep the specific ISO's hash from the file and check it.

@@ -1,0 +1,26 @@
+---
+- name: wait-for-iso-downloads
+  ansible.builtin.async_status:
+    jid: "{{ item.ansible_job_id }}"
+  loop: "{{ netboot_download_jobs }}"
+  register: download_results
+  until: download_results.finished
+  retries: 360
+  delay: 10
+  when:
+    - netboot_download_jobs is defined
+    - item.ansible_job_id is defined
+
+- name: extract-kernels-from-isos
+  ansible.builtin.shell: |
+    set -euo pipefail
+    MOUNT_DIR=$(mktemp -d)
+    trap 'umount "${MOUNT_DIR}" 2>/dev/null || true; rm -rf "${MOUNT_DIR}"' EXIT
+    mount -o loop {{ netboot_base_dir }}/casper-{{ item }}/ubuntu-{{ netboot_ubuntu_version }}-live-server-{{ item }}.iso "${MOUNT_DIR}"
+    cp "${MOUNT_DIR}/casper/vmlinuz" {{ netboot_base_dir }}/casper-{{ item }}/vmlinuz
+    cp "${MOUNT_DIR}/casper/initrd" {{ netboot_base_dir }}/casper-{{ item }}/initrd
+    umount "${MOUNT_DIR}"
+  loop: "{{ netboot_architectures }}"
+  args:
+    creates: "{{ netboot_base_dir }}/casper-{{ item }}/vmlinuz"
+    executable: /bin/bash

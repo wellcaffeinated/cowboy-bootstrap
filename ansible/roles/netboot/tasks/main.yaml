@@ -18,7 +18,68 @@
     group: root
     mode: '0755'
   loop:
-    - ubuntu/24.04/arm64  # Ubuntu 24.04 LTS ARM64 netboot files
-    - ipxe                # iPXE boot scripts
-    - shoelaces/templates # Shoelaces boot config templates
-    - cloud-init          # Cloud-init user-data and meta-data
+    - ipxe
+    - casper-arm64
+    - casper-amd64
+    - shoelaces/templates
+    - cloud-init
+
+- name: Install iPXE build dependencies
+  ansible.builtin.apt:
+    name:
+      - git
+      - build-essential
+      - perl
+      - liblzma-dev
+      - gcc-aarch64-linux-gnu
+    state: present
+    update_cache: yes
+
+- name: Build iPXE bootloaders
+  ansible.builtin.shell: |
+    set -euo pipefail
+    WORK_DIR=$(mktemp -d)
+    trap 'rm -rf "${WORK_DIR}"' EXIT
+    cd "${WORK_DIR}"
+    git clone https://github.com/ipxe/ipxe.git
+    cd ipxe
+    git checkout be3a78ea
+    cd src
+    make bin-x86_64-efi/snponly.efi EMBED= -j$(nproc)
+    cp bin-x86_64-efi/snponly.efi {{ netboot_base_dir }}/ipxe/snponly.efi
+    make bin-arm64-efi/snponly.efi EMBED= CROSS_COMPILE=aarch64-linux-gnu- -j$(nproc)
+    cp bin-arm64-efi/snponly.efi {{ netboot_base_dir }}/ipxe/snponly_arm64.efi
+  args:
+    creates: "{{ netboot_base_dir }}/ipxe/snponly.efi"
+    executable: /bin/bash
+
+- name: Install Ubuntu ISO download dependencies
+  ansible.builtin.apt:
+    name:
+      - curl
+      - gnupg
+      - ca-certificates
+    state: present
+
+- name: Copy Ubuntu ISO verification script
+  ansible.builtin.copy:
+    src: verify-download-ubuntu.sh
+    dest: /usr/local/bin/verify-download-ubuntu.sh
+    mode: '0755'
+
+- name: Download Ubuntu ISOs (async)
+  ansible.builtin.command:
+    cmd: /usr/local/bin/verify-download-ubuntu.sh {{ netboot_ubuntu_version }} {{ item }} {{ netboot_base_dir }}/casper-{{ item }}
+    creates: "{{ netboot_base_dir }}/casper-{{ item }}/ubuntu-{{ netboot_ubuntu_version }}-live-server-{{ item }}.iso"
+  loop: "{{ netboot_architectures }}"
+  async: 3600
+  poll: 0
+  register: ubuntu_downloads
+  notify:
+    - wait-for-iso-downloads
+    - extract-kernels-from-isos
+
+- name: Save download job info for handlers
+  ansible.builtin.set_fact:
+    netboot_download_jobs: "{{ ubuntu_downloads.results }}"
+  when: ubuntu_downloads.results is defined
