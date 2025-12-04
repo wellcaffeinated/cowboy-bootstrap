@@ -31,3 +31,11 @@
     mode: '0640'
   notify:
     - restart-consul
+
+- name: Enable and start Consul service
+  ansible.builtin.service:
+    name: consul
+    enabled: true
+    state: started
+  delegate_to: local-host
+  become: true

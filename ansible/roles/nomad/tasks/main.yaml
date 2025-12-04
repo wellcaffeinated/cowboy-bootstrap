@@ -13,3 +13,11 @@
     mode: 0640
   notify:
     - restart-nomad
+
+- name: Enable and start Nomad service
+  ansible.builtin.service:
+    name: nomad
+    enabled: true
+    state: started
+  delegate_to: local-host
+  become: true

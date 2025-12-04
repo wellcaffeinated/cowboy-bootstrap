@@ -32,5 +32,13 @@
   notify:
     - restart-vault
 
+- name: Enable and start Vault service
+  ansible.builtin.service:
+    name: vault
+    enabled: true
+    state: started
+  delegate_to: local-host
+  become: true
+
 # Note: Vault will self-register with Consul using service_registration
 # No need for manual service definition that causes startup timing issues
