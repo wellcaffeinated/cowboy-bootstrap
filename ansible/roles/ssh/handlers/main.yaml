@@ -4,5 +4,6 @@
   ansible.builtin.service:
     name: ssh
     state: restarted
+    enabled: true
   delegate_to: local-host
   become: true

@@ -3,6 +3,7 @@
   ansible.builtin.service:
     name: vault
     state: restarted
+    enabled: true
   delegate_to: local-host
   become: true
   listen: restart-vault
