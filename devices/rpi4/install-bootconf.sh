@@ -176,13 +176,3 @@ else
 fi
 echo
 echo "A REBOOT is required for changes to take effect."
-echo
-read -p "Reboot now? (y/N): " -n 1 -r
-echo
-if [[ $REPLY =~ ^[Yy]$ ]]; then
-    echo "Rebooting in 3 seconds..."
-    sleep 3
-    reboot
-else
-    echo "Please reboot manually when ready: sudo reboot"
-fi
