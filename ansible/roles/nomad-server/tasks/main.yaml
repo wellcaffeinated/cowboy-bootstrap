@@ -8,3 +8,9 @@
     mode: '0640'
   notify:
     - restart-nomad
+
+- name: Create ARA data directory
+  ansible.builtin.file:
+    path: /nomad/ara
+    state: directory
+    mode: '0755'

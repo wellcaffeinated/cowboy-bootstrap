@@ -8,11 +8,11 @@ RUN --mount=type=bind,source=requirements.txt,target=requirements.txt \
     ./venv/bin/ansible-galaxy collection install community.general
 
 FROM ansible
-# ENV ARA_API_CLIENT=http \
-#     ARA_API_SERVER=http://araserver.somewhere \
-#     ANSIBLE_CALLBACK_PLUGINS=/ansible/venv/lib/python3.12/site-packages/ara/plugins/callback \
-#     ANSIBLE_ACTION_PLUGINS=/ansible/venv/lib/python3.12/site-packages/ara/plugins/action \
-#     ANSIBLE_LOOKUP_PLUGINS=/ansible/venv/lib/python3.12/site-packages/ara/plugins/lookup
+ENV ARA_API_CLIENT=http \
+    ARA_API_SERVER=http://192.168.100.1:8000 \
+    ANSIBLE_CALLBACK_PLUGINS=/ansible/venv/lib/python3.12/site-packages/ara/plugins/callback \
+    ANSIBLE_ACTION_PLUGINS=/ansible/venv/lib/python3.12/site-packages/ara/plugins/action \
+    ANSIBLE_LOOKUP_PLUGINS=/ansible/venv/lib/python3.12/site-packages/ara/plugins/lookup
 COPY --exclude=*.txt . .
 
 LABEL org.opencontainers.image.title="Ansible Configuration"
