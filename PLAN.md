@@ -167,7 +167,84 @@ Nodes connect to bootstrap LAN and:
 - Traefik running as Nomad job, serving boot files with Consul integration
 - Cloud-init configuration that bootstraps RPi4+ nodes
 
-### Phase 3: Node Provisioning Profiles
+### Phase 3: ARA Integration & Management Tools
+**Goal:** Add Ansible logging and remote management capabilities
+
+**Architecture Pattern:** Inspired by M. Aldridge's Matrix setup, adapted to use our existing Vault infrastructure instead of Nomad Variables.
+
+**Tasks:**
+- [ ] Deploy ARA (Ansible Run Analysis) server
+  - Create Nomad job for ARA API server (official Docker image)
+  - Configure host volume for SQLite database persistence (`/nomad/ara`)
+  - Expose on bootstrap network (192.168.100.1:8000)
+  - Web UI for viewing all Ansible playbook runs with task details and timing
+- [ ] Integrate ARA with Ansible Docker container
+  - Add `ara==1.7.2` to ansible/requirements.txt
+  - Configure environment variables in Dockerfile:
+    - ARA_API_CLIENT=http
+    - ARA_API_SERVER=http://192.168.100.1:8000
+    - ANSIBLE_CALLBACK_PLUGINS (ARA callback plugin path)
+  - No code changes required - passive integration via callback plugin
+  - All future `begin.sh` runs automatically logged to ARA
+- [ ] Set up GitHub Actions for Ansible container builds
+  - Create `.github/workflows/build-ansible.yml` workflow
+  - Build and push to GitHub Container Registry (GHCR) on push to master
+  - Tag images with git commit SHA for versioning
+  - Tag `latest` for default deployments
+  - Free registry, no self-hosted infrastructure needed
+- [ ] Create parameterized Nomad job for remote Ansible execution
+  - Sysbatch job type (dispatch-based, runs on specific nodes)
+  - Parameters: IMAGE_TAG (git commit or "latest"), ANSIBLE_PLAYBOOK (path)
+  - Uses same chroot pattern as `begin.sh` (privileged, host network, /:/host volume)
+  - Limits execution to specific node with `--limit ${node.unique.name}`
+  - Pulls versioned images from GHCR
+  - All runs automatically logged to ARA
+- [ ] Document Vault integration patterns (for future secrets)
+  - Vault already installed and configured (uses Consul backend)
+  - Document initialization procedure (vault operator init/unseal)
+  - Create example Nomad job using Vault integration
+  - Vault policies for per-service secret access
+  - Use Vault instead of Nomad Variables for production secrets
+
+**Deliverables:**
+- ARA server running, accessible at http://192.168.100.1:8000
+- All Ansible runs logged with full task history and output
+- GitHub Actions automatically builds Ansible images on git push
+- Can dispatch Ansible playbooks to any node via Nomad CLI/UI
+- Reproducible deployments using git commit-based image tags
+- Vault integration documented and ready for secrets management
+
+**Benefits:**
+- **Visibility**: Every Ansible run logged with timing, output, and results
+- **Remote Management**: Run playbooks on any node without SSH access
+- **Reproducibility**: Version-controlled playbook execution via git commits
+- **Automation**: CI/CD pipeline builds containers automatically
+- **Security**: Vault ready for secrets when needed (already installed)
+
+**Usage Example:**
+```bash
+# Run system update playbook on specific node with latest code
+nomad job dispatch \
+  -meta IMAGE_TAG=latest \
+  -meta ANSIBLE_PLAYBOOK=/ansible/update.yml \
+  ansible@rpi-swift-golden-condor
+
+# Run specific git commit version on bootstrap server
+nomad job dispatch \
+  -meta IMAGE_TAG=master-abc1234 \
+  -meta ANSIBLE_PLAYBOOK=/ansible/bootstrap-server.yml \
+  ansible@cowboy-bootstrap
+
+# Update all nodes (loop through node list)
+for node in $(nomad node status -json | jq -r '.[].Name'); do
+  nomad job dispatch \
+    -meta IMAGE_TAG=latest \
+    -meta ANSIBLE_PLAYBOOK=/ansible/base.yml \
+    "ansible@${node}"
+done
+```
+
+### Phase 4: Node Provisioning Profiles
 **Goal:** Support different node types with specialized configurations
 
 **Tasks:**
@@ -202,7 +279,7 @@ Nodes connect to bootstrap LAN and:
 - Nodes can be provisioned with different roles
 - Profile management system operational
 
-### Phase 4: Consul Mesh Integration
+### Phase 5: Consul Mesh Integration
 **Goal:** Nodes automatically join Consul mesh after bootstrap
 
 **Tasks:**
@@ -227,7 +304,7 @@ Nodes connect to bootstrap LAN and:
 - Service discovery operational
 - Cluster health visible via Consul UI
 
-### Phase 5: Ongoing Management via Nomad
+### Phase 6: Ongoing Management via Nomad
 **Goal:** Manage nodes through Nomad-scheduled Ansible jobs
 
 **Tasks:**
@@ -271,7 +348,7 @@ Nodes connect to bootstrap LAN and:
 - Common management tasks automated
 - Centralized management interface
 
-### Phase 6: Production Network Migration
+### Phase 7: Production Network Migration
 **Goal:** Move nodes from bootstrap LAN to production network
 
 **Tasks:**
@@ -560,15 +637,17 @@ The bootstrap infrastructure will be considered successful when:
 1. ✅ Bootstrap server can provision itself from clean Ubuntu install
 2. ✅ Consul Connect operational with automatic mTLS for service-to-service communication
 3. ✅ Vault operational with Consul backend, secrets management functional
-4. ✅ New nodes can PXE boot and automatically install Ubuntu
-5. ✅ Nodes automatically execute `begin.sh` and join cluster
-6. ✅ Multiple provisioning profiles available for different roles (including dev/prod)
-7. ✅ Consul mesh operational with service discovery and Connect enabled
-8. ✅ Nomad can schedule workloads across cluster with Vault integration and Connect support
-9. ✅ Ansible tasks can be run cluster-wide via Nomad jobs
-10. ✅ Dev→prod update workflow operational (updates tested on dev nodes before production)
-11. ✅ Nodes can be migrated to production network post-bootstrap
-12. ✅ System documented and reproducible
+4. [ ] New nodes can PXE boot and automatically install Ubuntu
+5. [ ] Nodes automatically execute `begin.sh` and join cluster
+6. [ ] ARA server operational, logging all Ansible playbook runs
+7. [ ] GitHub Actions building Ansible containers automatically
+8. [ ] Ansible playbooks can be dispatched to any node via Nomad
+9. [ ] Multiple provisioning profiles available for different roles (including dev/prod)
+10. [ ] Consul mesh operational with service discovery and Connect enabled
+11. [ ] Nomad can schedule workloads across cluster with Vault integration and Connect support
+12. [ ] Dev→prod update workflow operational (updates tested on dev nodes before production)
+13. [ ] Nodes can be migrated to production network post-bootstrap
+14. [ ] System documented and reproducible
 
 ## References
 
