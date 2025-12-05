@@ -244,7 +244,90 @@ for node in $(nomad node status -json | jq -r '.[].Name'); do
 done
 ```
 
-### Phase 4: Node Provisioning Profiles
+### Phase 4: Remote Web Access (Cloudflare Tunnel)
+**Goal:** Secure remote access to web UIs (ARA, Nomad, Consul, Vault)
+
+**Problem**: Bootstrap server has no browser. Web services (ARA:8000, Nomad:4646, Consul:8500, Vault:8200) only accessible on local network.
+
+**Solution**: Cloudflare Tunnel + Traefik reverse proxy
+
+**Architecture**:
+```
+Internet → Cloudflare Edge (HTTPS, auth) → Tunnel → Traefik → Services
+```
+
+**Why Cloudflare Tunnel**:
+- Zero inbound firewall ports (outbound HTTPS only)
+- Free tier (up to 50 users)
+- Automatic HTTPS via Cloudflare
+- Built-in authentication (Google, GitHub, email OTP)
+- No public IP required (works behind NAT)
+- DDoS protection at edge
+- Audit logs
+
+**Tasks**:
+- [ ] Investigate Cloudflare Terraform provider
+  - Research `cloudflare/cloudflare` Terraform provider
+  - Check if tunnels can be created via Terraform
+  - Check if Access policies can be managed via Terraform
+  - Determine what must be done manually vs via IaC
+  - Document limitations and manual steps required
+- [ ] Deploy Traefik reverse proxy as Nomad job
+  - Nomad service discovery provider
+  - Routes traffic to services based on path/hostname
+  - Exposes port 80 for internal routing
+  - Dashboard on port 8080
+- [ ] Update services with Traefik routing tags
+  - ARA: `traefik.enable=true`, route `/ara`
+  - Add tags to other services as needed
+  - Services opt-in (not exposed by default)
+- [ ] Setup Cloudflare account and domain
+  - Create Cloudflare Zero Trust account (free)
+  - Add domain (can use free subdomain)
+  - Evaluate Terraform provider vs manual setup
+- [ ] Create Cloudflare Tunnel (via Terraform if possible)
+  - Use Terraform provider if supported
+  - Otherwise, create in Zero Trust dashboard
+  - Store tunnel credentials securely (Vault)
+- [ ] Deploy cloudflared as Nomad job
+  - Uses official cloudflare/cloudflared Docker image
+  - Retrieves tunnel token from Vault
+  - Creates outbound HTTPS tunnel to Cloudflare
+  - No inbound firewall rules needed
+- [ ] Configure Cloudflare tunnel routes (Terraform or dashboard)
+  - ara.yourdomain.com → traefik/ara
+  - nomad.yourdomain.com → 192.168.100.1:4646
+  - consul.yourdomain.com → 192.168.100.1:8500
+  - vault.yourdomain.com → 192.168.100.1:8200
+- [ ] Configure Cloudflare Access policies (Terraform or dashboard)
+  - Email-based authentication
+  - Or GitHub organization membership
+  - Session timeouts, audit logs
+
+**Deliverables**:
+- Traefik running and discovering Nomad services
+- Cloudflare Tunnel connected and routing traffic
+- Web UIs accessible via `https://service.yourdomain.com`
+- Authentication required before access
+- No public ports exposed on bootstrap server
+- Infrastructure managed via Terraform (where possible)
+
+**Alternative (Simpler)**: Tailscale
+- For personal use, Tailscale VPN is simpler
+- Install on server and workstation (10 min)
+- Access via `http://bootstrap-server:8000`
+- Free for personal use, 100 devices
+- P2P encrypted mesh network
+
+**Alternative (Quick Test)**: SSH Tunneling
+```bash
+ssh -L 8000:localhost:8000 -L 4646:localhost:4646 -L 8500:localhost:8500 user@server
+```
+- Access via `http://localhost:8000`
+- No setup, uses existing SSH
+- Manual per session
+
+### Phase 5: Node Provisioning Profiles
 **Goal:** Support different node types with specialized configurations
 
 **Tasks:**
@@ -279,7 +362,7 @@ done
 - Nodes can be provisioned with different roles
 - Profile management system operational
 
-### Phase 5: Consul Mesh Integration
+### Phase 6: Consul Mesh Integration
 **Goal:** Nodes automatically join Consul mesh after bootstrap
 
 **Tasks:**
@@ -304,7 +387,7 @@ done
 - Service discovery operational
 - Cluster health visible via Consul UI
 
-### Phase 6: Ongoing Management via Nomad
+### Phase 7: Ongoing Management via Nomad
 **Goal:** Manage nodes through Nomad-scheduled Ansible jobs
 
 **Tasks:**
@@ -348,7 +431,7 @@ done
 - Common management tasks automated
 - Centralized management interface
 
-### Phase 7: Production Network Migration
+### Phase 8: Production Network Migration
 **Goal:** Move nodes from bootstrap LAN to production network
 
 **Tasks:**
