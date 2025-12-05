@@ -71,12 +71,13 @@ WAKE_ON_GPIO=1
 # Don't power off on halt (useful for debugging)
 POWER_OFF_ON_HALT=0
 
-# Boot order: Network first, then SD card, then USB
+# Boot order: USB first, then Network, then SD card
 # 0x1 = SD card boot
 # 0x2 = Network boot
 # 0x4 = USB boot
-# Order is right to left, so 0x421 = try USB, then SD, then network
-BOOT_ORDER=0x421
+# 0xf = Restart from beginning
+# Order is right to left, so 0xf124 = try USB, then Network, then SD, then restart
+BOOT_ORDER=0xf124
 
 # Network boot configuration
 # TFTP_PREFIX: 0 = use serial number as subdirectory
@@ -100,7 +101,7 @@ DHCP_OPTION67=1
 EOF
 
 echo "Applying boot configuration..."
-echo "Boot order: USB → SD Card → Network (0x421)"
+echo "Boot order: USB → Network → SD Card (0xf124)"
 
 # Get latest EEPROM image
 # Check paths in same order as rpi-eeprom-update (per official rpi-eeprom repository)
