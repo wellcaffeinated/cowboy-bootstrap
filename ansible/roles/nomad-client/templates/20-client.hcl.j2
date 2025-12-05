@@ -3,7 +3,7 @@
 
 client {
   enabled = true
-  cni_path = "/usr/libexec/cni"
+  cni_path = "/opt/cni/bin"
   cni_config_dir = "/etc/cni/net.d"
   bridge_network_hairpin_mode = true
 {% if nomad_server_join is defined %}

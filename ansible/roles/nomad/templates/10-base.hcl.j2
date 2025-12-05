@@ -11,11 +11,11 @@ datacenter = "boulder"
 #  enabled = true
 #}
 
-# Advertise addresses
+# Advertise addresses on bootstrap LAN for netboot nodes
 advertise {
-  http = "{{ ansible_default_ipv4.address }}"
-  rpc = "{{ ansible_default_ipv4.address }}"
-  serf = "{{ ansible_default_ipv4.address }}"
+  http = "{{ bootstrap_lan_ip }}"
+  rpc = "{{ bootstrap_lan_ip }}"
+  serf = "{{ bootstrap_lan_ip }}"
 }
 
 # Consul integration

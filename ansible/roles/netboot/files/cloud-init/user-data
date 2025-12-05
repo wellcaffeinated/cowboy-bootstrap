@@ -1,0 +1,79 @@
+#cloud-config
+autoinstall:
+  version: 1
+
+  # Locale and keyboard
+  locale: en_US.UTF-8
+  keyboard:
+    layout: us
+
+  # Network configuration during installation
+  network:
+    version: 2
+    ethernets:
+      eth0:
+        dhcp4: true
+        dhcp6: false
+
+  # Storage - use entire disk
+  storage:
+    layout:
+      name: direct
+      match:
+        size: largest
+
+  # Create ubuntu user
+  identity:
+    hostname: node-new
+    username: ubuntu
+    # Password: ubuntu (for console access on bootstrap LAN)
+    password: "$6$rounds=4096$saltsaltsalt$L3L6DLz2V.I9W8qvPfLFmPBLgP5QrY/uXKxbXJ4JI5qxXGGvzL3J5xP0Z6bBJiW0qbEIhI5MbP0FmS4T3xK0V1"
+
+  # SSH configuration
+  ssh:
+    install-server: yes
+    allow-pw: yes
+
+  # Packages - minimal set, begin.sh will install more
+  packages:
+    - curl
+    - ca-certificates
+    - git
+
+  # Late commands - execute at end of installation before reboot
+  late-commands:
+    # Clone repository to installed system
+    - curtin in-target --target=/target -- git clone https://github.com/wellcaffeinated/cowboy-bootstrap.git /home/ubuntu/bootstrap
+    - curtin in-target --target=/target -- chown -R ubuntu:ubuntu /home/ubuntu/bootstrap
+
+    # Create systemd oneshot service to run begin.sh on first boot
+    - |
+      curtin in-target --target=/target -- bash -c 'cat > /etc/systemd/system/bootstrap-begin.service <<EOF
+      [Unit]
+      Description=Bootstrap node with begin.sh
+      After=network-online.target cloud-init.service
+      Wants=network-online.target
+
+      [Service]
+      Type=oneshot
+      WorkingDirectory=/home/ubuntu/bootstrap
+      ExecStart=/home/ubuntu/bootstrap/begin.sh aspen-generic
+      StandardOutput=journal+console
+      StandardError=journal+console
+      RemainAfterExit=yes
+
+      [Install]
+      WantedBy=multi-user.target
+      EOF'
+
+    # Enable the service
+    - curtin in-target --target=/target -- systemctl enable bootstrap-begin.service
+
+    # Log completion
+    - echo "Autoinstall complete, begin.sh will run on first boot"
+
+# Reboot after installation
+power-state:
+  mode: reboot
+  timeout: 30
+  condition: true

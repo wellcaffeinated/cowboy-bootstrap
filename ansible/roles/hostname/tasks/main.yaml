@@ -1,0 +1,62 @@
+---
+# Generate unique hostname from MAC address using petname
+
+- name: Install petname package
+  ansible.builtin.apt:
+    name: petname
+    state: present
+
+- name: Get primary MAC address
+  ansible.builtin.set_fact:
+    primary_mac: "{{ ansible_default_ipv4.macaddress }}"
+
+- name: Detect hardware type from device tree (ARM)
+  ansible.builtin.slurp:
+    src: /sys/firmware/devicetree/base/model
+  register: device_tree_model
+  ignore_errors: true
+
+- name: Detect hardware type from DMI (x86)
+  ansible.builtin.slurp:
+    src: /sys/class/dmi/id/product_name
+  register: dmi_product
+  ignore_errors: true
+
+- name: Determine hostname prefix based on hardware
+  ansible.builtin.set_fact:
+    hostname_prefix: "{{ 'rpi' if (device_tree_model is success and 'Raspberry Pi' in (device_tree_model.content | b64decode))
+                         else 'vm' if (dmi_product is success and ('Virtual' in (dmi_product.content | b64decode) or 'VM' in (dmi_product.content | b64decode) or 'KVM' in (dmi_product.content | b64decode)))
+                         else 'arm' if device_tree_model is success
+                         else 'node' }}"
+
+- name: Generate deterministic hostname from MAC
+  ansible.builtin.shell: |
+    set -euo pipefail
+    MAC="{{ primary_mac }}"
+    MAC_CLEAN=$(echo $MAC | tr -d ':')
+    SEED=$(printf "%d" 0x${MAC_CLEAN:0:8})
+    petname --words=3 --separator=- --seed=$SEED
+  args:
+    executable: /bin/bash
+  register: petname_output
+  changed_when: false
+
+- name: Set generated hostname fact
+  ansible.builtin.set_fact:
+    generated_hostname: "{{ hostname_prefix }}-{{ petname_output.stdout }}"
+
+- name: Display generated hostname
+  ansible.builtin.debug:
+    msg: "Generated hostname: {{ generated_hostname }} (from MAC: {{ primary_mac }})"
+
+- name: Set system hostname
+  ansible.builtin.hostname:
+    name: "{{ generated_hostname }}"
+  when: ansible_hostname != generated_hostname
+
+- name: Update /etc/hosts with new hostname
+  ansible.builtin.lineinfile:
+    path: /etc/hosts
+    regexp: '^127\.0\.1\.1'
+    line: "127.0.1.1 {{ generated_hostname }}"
+    state: present

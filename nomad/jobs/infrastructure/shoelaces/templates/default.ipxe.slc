@@ -1,0 +1,24 @@
+{{define "default.ipxe" -}}
+#!ipxe
+# Default boot template for Raspberry Pi 4 - Ubuntu 24.04.3 ARM64
+
+echo ================================================
+echo Network Boot - Ubuntu 24.04.3 ARM64
+echo ================================================
+echo MAC Address: ${net0/mac}
+echo IP Address:  ${net0/ip}
+echo Gateway:     ${net0/gateway}
+echo ================================================
+
+# Boot Ubuntu live installer with autoinstall
+kernel http://{{.baseURL}}/configs/static/ubuntu/casper-arm64/vmlinuz initrd=initrd console=tty1 console=ttyS0,115200 ip=dhcp ds=nocloud-net;s=http://{{.baseURL}}/configs/static/ubuntu/cloud-init/ autoinstall
+initrd http://{{.baseURL}}/configs/static/ubuntu/casper-arm64/initrd
+
+echo Booting Ubuntu 24.04.3 ARM64 installer...
+boot || goto failed
+
+:failed
+echo Boot failed! Retrying in 10 seconds...
+sleep 10
+chain http://{{.baseURL}}/start
+{{end}}

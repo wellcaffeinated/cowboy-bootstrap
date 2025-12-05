@@ -6,6 +6,7 @@
 
   roles:
     - base
+    - hostname
     - chrony
     - users
     - ssh

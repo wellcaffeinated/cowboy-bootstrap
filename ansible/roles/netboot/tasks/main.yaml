@@ -83,3 +83,19 @@
   ansible.builtin.set_fact:
     netboot_download_jobs: "{{ ubuntu_downloads.results }}"
   when: ubuntu_downloads.results is defined
+
+- name: Copy cloud-init user-data
+  ansible.builtin.copy:
+    src: cloud-init/user-data
+    dest: "{{ netboot_base_dir }}/cloud-init/user-data"
+    mode: '0644'
+    owner: root
+    group: root
+
+- name: Copy cloud-init meta-data template
+  ansible.builtin.template:
+    src: cloud-init/meta-data.j2
+    dest: "{{ netboot_base_dir }}/cloud-init/meta-data"
+    mode: '0644'
+    owner: root
+    group: root

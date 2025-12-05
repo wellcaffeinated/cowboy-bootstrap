@@ -81,6 +81,51 @@
     direction: out
   when: enable_dhcp_server | default(false)
 
+- name: Allow DNS server on bootstrap LAN (UDP 53)
+  community.general.ufw:
+    rule: allow
+    port: '53'
+    proto: udp
+    interface: "{{ bootstrap_lan_interface }}"
+    direction: in
+  when: enable_netboot_server | default(false)
+
+- name: Allow DNS server on bootstrap LAN (TCP 53)
+  community.general.ufw:
+    rule: allow
+    port: '53'
+    proto: tcp
+    interface: "{{ bootstrap_lan_interface }}"
+    direction: in
+  when: enable_netboot_server | default(false)
+
+- name: Allow TFTP server on bootstrap LAN (UDP 69)
+  community.general.ufw:
+    rule: allow
+    port: '69'
+    proto: udp
+    interface: "{{ bootstrap_lan_interface }}"
+    direction: in
+  when: enable_netboot_server | default(false)
+
+- name: Allow HTTP server on bootstrap LAN (TCP 80)
+  community.general.ufw:
+    rule: allow
+    port: '80'
+    proto: tcp
+    interface: "{{ bootstrap_lan_interface }}"
+    direction: in
+  when: enable_netboot_server | default(false)
+
+- name: Allow Shoelaces HTTP on bootstrap LAN (TCP 8081)
+  community.general.ufw:
+    rule: allow
+    port: '8081'
+    proto: tcp
+    interface: "{{ bootstrap_lan_interface }}"
+    direction: in
+  when: enable_netboot_server | default(false)
+
 - name: Enable UFW
   community.general.ufw:
     state: enabled

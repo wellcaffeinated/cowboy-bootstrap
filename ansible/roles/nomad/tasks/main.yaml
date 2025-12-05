@@ -4,6 +4,13 @@
     name: nomad
     state: present
 
+- name: Remove old monolithic nomad.hcl config
+  ansible.builtin.file:
+    path: /etc/nomad.d/nomad.hcl
+    state: absent
+  notify:
+    - restart-nomad
+
 - name: Install base config
   template:
     src: 10-base.hcl.j2

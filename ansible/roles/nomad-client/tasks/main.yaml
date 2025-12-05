@@ -7,6 +7,20 @@
   loop_control:
     label: "{{item.name}}"
 
+- name: Install CNI plugins for bridge networking
+  ansible.builtin.shell: |
+    set -euo pipefail
+    ARCH_CNI=$( [ $(uname -m) = aarch64 ] && echo arm64 || echo amd64)
+    CNI_PLUGIN_VERSION=v1.6.2
+    mkdir -p /opt/cni/bin
+    mkdir -p /etc/cni/net.d
+    curl -L -o /tmp/cni-plugins.tgz "https://github.com/containernetworking/plugins/releases/download/${CNI_PLUGIN_VERSION}/cni-plugins-linux-${ARCH_CNI}-${CNI_PLUGIN_VERSION}.tgz"
+    tar -C /opt/cni/bin -xzf /tmp/cni-plugins.tgz
+    rm /tmp/cni-plugins.tgz
+  args:
+    creates: /opt/cni/bin/bridge
+    executable: /bin/bash
+
 - name: Deploy Nomad client configuration
   ansible.builtin.template:
     src: 20-client.hcl.j2
