@@ -43,7 +43,15 @@ apt-get install -y rpi-eeprom
 echo
 echo "Current EEPROM configuration:"
 echo "----------------------------"
-rpi-eeprom-config | grep -E "BOOT_ORDER|NET_BOOT" || echo "(no boot settings found)"
+CURRENT_CONFIG=$(rpi-eeprom-config 2>&1)
+if echo "$CURRENT_CONFIG" | grep -qE "BOOT_ORDER|NET_BOOT"; then
+    echo "$CURRENT_CONFIG" | grep -E "BOOT_ORDER|NET_BOOT|BOOT_UART|WAKE_ON_GPIO|POWER_OFF_ON_HALT|DHCP"
+else
+    echo "$CURRENT_CONFIG"
+    echo ""
+    echo "WARNING: Current EEPROM does not show BOOT_ORDER or NET_BOOT settings."
+    echo "This may indicate an old EEPROM version or unusual configuration format."
+fi
 echo
 
 # Create temporary bootconf file
@@ -94,13 +102,41 @@ EOF
 echo "Applying boot configuration..."
 echo "Boot order: USB → SD Card → Network (0x421)"
 
-# Get latest stable EEPROM image
-LATEST_EEPROM=$(ls -t /lib/firmware/raspberrypi/bootloader/stable/pieeprom-*.bin 2>/dev/null | head -n1)
+# Get latest EEPROM image
+# Check paths in same order as rpi-eeprom-update (per official rpi-eeprom repository)
+# See: https://github.com/raspberrypi/rpi-eeprom/blob/master/rpi-eeprom-update
+FIRMWARE_PATHS=(
+    "/usr/lib/firmware/raspberrypi/bootloader-2711/default"
+    "/usr/lib/firmware/raspberrypi/bootloader-2711/stable"
+    "/lib/firmware/raspberrypi/bootloader-2711/default"
+    "/lib/firmware/raspberrypi/bootloader-2711/stable"
+    "/usr/lib/firmware/raspberrypi/bootloader/default"
+    "/usr/lib/firmware/raspberrypi/bootloader/stable"
+    "/lib/firmware/raspberrypi/bootloader/default"
+    "/lib/firmware/raspberrypi/bootloader/stable"
+)
+
+LATEST_EEPROM=""
+FOUND_PATH=""
+for path in "${FIRMWARE_PATHS[@]}"; do
+    if [[ -d "$path" ]]; then
+        LATEST_EEPROM=$(ls -t "$path"/pieeprom-*.bin 2>/dev/null | head -n1)
+        if [[ -n "$LATEST_EEPROM" ]]; then
+            FOUND_PATH="$path"
+            break
+        fi
+    fi
+done
 
 if [[ -z "$LATEST_EEPROM" ]]; then
-    echo "ERROR: Could not find EEPROM image in /lib/firmware/raspberrypi/bootloader/stable/"
+    echo "ERROR: Could not find EEPROM image in any standard location:"
+    printf '  - %s\n' "${FIRMWARE_PATHS[@]}"
+    echo ""
+    echo "Try running: sudo rpi-eeprom-update"
     exit 1
 fi
+
+echo "Found EEPROM firmware in: $FOUND_PATH"
 
 echo "Using EEPROM image: $(basename $LATEST_EEPROM)"
 
@@ -111,17 +147,33 @@ trap "rm -f $BOOTCONF_FILE $NEW_EEPROM" EXIT
 rpi-eeprom-config --out "$NEW_EEPROM" --config "$BOOTCONF_FILE" "$LATEST_EEPROM"
 
 echo
-echo "Flashing EEPROM with new configuration..."
-rpi-eeprom-update -d -f "$NEW_EEPROM"
+echo "New configuration to be applied:"
+echo "--------------------------------"
+rpi-eeprom-config "$NEW_EEPROM" | grep -E "BOOT_ORDER|NET_BOOT|BOOT_UART|WAKE_ON_GPIO|POWER_OFF_ON_HALT|DHCP"
+echo
 
-echo
-echo "========================================"
-echo "SUCCESS! Boot configuration updated"
-echo "========================================"
-echo
-echo "New configuration:"
-echo "-----------------"
-rpi-eeprom-config "$NEW_EEPROM" | grep -E "BOOT_ORDER|NET_BOOT"
+echo "Flashing EEPROM with new configuration..."
+if rpi-eeprom-update -d -f "$NEW_EEPROM"; then
+    echo
+    echo "========================================"
+    echo "SUCCESS! Boot configuration updated"
+    echo "========================================"
+    echo
+    echo "Verification - checking scheduled update:"
+    echo "-----------------------------------------"
+    rpi-eeprom-update
+    echo
+    echo "To verify after reboot, run:"
+    echo "  sudo rpi-eeprom-config | grep BOOT_ORDER"
+else
+    echo
+    echo "========================================"
+    echo "ERROR: EEPROM update failed"
+    echo "========================================"
+    echo
+    echo "Please check the error messages above and try again."
+    exit 1
+fi
 echo
 echo "A REBOOT is required for changes to take effect."
 echo
