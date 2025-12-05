@@ -21,7 +21,7 @@ if [[ ! -f /proc/device-tree/model ]]; then
     exit 1
 fi
 
-MODEL=$(cat /proc/device-tree/model)
+MODEL=$(cat /proc/device-tree/model | tr -d '\0')
 echo "Detected: $MODEL"
 
 # Verify it's a Raspberry Pi 4
