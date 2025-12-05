@@ -125,3 +125,4 @@ Service restart handlers must use `delegate_to: local-host` because systemd cann
 - Planning of the project and next steps are tracked in PLAN.md
 - always pin versions of container images
 - when commenting in files try to write comments that don't break when settings change
+- when comparing to M. Aldridge's Matrix repo, clone it to a tmp directory and scan the repo for reference

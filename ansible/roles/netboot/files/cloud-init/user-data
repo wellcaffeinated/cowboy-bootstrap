@@ -15,11 +15,12 @@ autoinstall:
         dhcp4: true
         dhcp6: false
 
-  # Storage - use entire disk
+  # Storage - use entire disk (prefer USB, then largest)
   storage:
     layout:
       name: direct
       match:
+        path: /dev/sd*
         size: largest
 
   # Create ubuntu user
